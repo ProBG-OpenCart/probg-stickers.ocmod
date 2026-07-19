@@ -1,0 +1,643 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+  <name>ProBG Product Stickers for OpenCart</name>
+  <code>probg_product_stickers_2_0</code>
+  <version>2.0</version>
+  <author>Veselin Totev, ProBG Web Studio</author>
+  <link>https://www.probg.com</link>
+
+  <!-- ================= ADMIN: CATEGORY CONTROLLER ================= -->
+  <file path="admin/controller/catalog/category.php">
+
+    <!-- FORM: load stickers and selected category stickers -->
+    <operation>
+      <search><![CDATA[protected function getForm() {]]></search>
+      <add position="after"><![CDATA[
+$this->load->language('extension/module/product_sticker');
+$this->load->model('extension/module/product_sticker');
+
+$data['tab_stickers'] = $this->language->get('tab_stickers');
+$data['text_stickers_none'] = $this->language->get('text_stickers_none');
+
+$data['stickers'] = $this->model_extension_module_product_sticker->getStickers();
+
+if (isset($this->request->post['category_sticker'])) {
+  $data['category_sticker'] = array_map('intval', $this->request->post['category_sticker']);
+} elseif (isset($this->request->get['category_id'])) {
+  $data['category_sticker'] = $this->model_catalog_category->getCategoryStickers((int)$this->request->get['category_id']);
+} else {
+  $data['category_sticker'] = array();
+}
+  ]]></add>
+    </operation>
+
+    <!-- LIST: load stickers filter -->
+    <operation>
+      <search><![CDATA[protected function getList() {]]></search>
+      <add position="after"><![CDATA[
+$this->load->language('extension/module/product_sticker');
+$this->load->model('extension/module/product_sticker');
+$data['user_token'] = $this->session->data['user_token'];
+
+$data['text_filter_sticker'] = $this->language->get('text_filter_sticker');
+$data['text_all_stickers'] = $this->language->get('text_all_stickers');
+
+$data['filter_stickers'] = $this->model_extension_module_product_sticker->getStickers();
+
+if (isset($this->request->get['filter_sticker']) && $this->request->get['filter_sticker'] !== '') {
+  $filter_sticker = (int)$this->request->get['filter_sticker'];
+} else {
+  $filter_sticker = '';
+}
+
+$data['filter_sticker'] = $filter_sticker;
+  ]]></add>
+    </operation>
+
+    <!-- LIST: add filter_sticker to filter_data -->
+    <operation>
+      <search><![CDATA['sort'  => $sort,]]></search>
+      <add position="before"><![CDATA[
+      'filter_sticker' => $filter_sticker,
+    ]]></add>
+    </operation>
+
+    <!-- LIST: preserve filter_sticker in URL -->
+    <operation>
+      <search><![CDATA[$url = '';]]></search>
+      <add position="after"><![CDATA[
+if (isset($this->request->get['filter_sticker']) && $this->request->get['filter_sticker'] !== '') {
+  $url .= '&filter_sticker=' . (int)$this->request->get['filter_sticker'];
+}
+    ]]></add>
+    </operation>
+  </file>
+
+  <!-- ================= ADMIN: CATEGORY MODEL ================= -->
+  <file path="admin/model/catalog/category.php">
+
+    <!-- helper: get selected category stickers -->
+    <operation>
+      <search><![CDATA[class ModelCatalogCategory extends Model {]]></search>
+      <add position="after"><![CDATA[
+public function getCategoryStickers($category_id) {
+  $sticker_data = array();
+
+  $query = $this->db->query("
+    SELECT product_sticker_id
+    FROM `" . DB_PREFIX . "category_to_sticker`
+    WHERE category_id = '" . (int)$category_id . "'
+  ");
+
+  foreach ($query->rows as $result) {
+    $sticker_data[] = (int)$result['product_sticker_id'];
+  }
+
+  return $sticker_data;
+}
+    ]]></add>
+    </operation>
+
+    <!-- add category stickers -->
+    <operation>
+      <search><![CDATA[$category_id = $this->db->getLastId();]]></search>
+      <add position="after"><![CDATA[
+if (isset($data['category_sticker']) && is_array($data['category_sticker'])) {
+  foreach ($data['category_sticker'] as $product_sticker_id) {
+    $this->db->query("
+      INSERT IGNORE INTO `" . DB_PREFIX . "category_to_sticker`
+      SET category_id = '" . (int)$category_id . "',
+          product_sticker_id = '" . (int)$product_sticker_id . "'
+    ");
+  }
+}
+    ]]></add>
+    </operation>
+
+    <!-- edit category stickers -->
+    <operation>
+      <search><![CDATA[public function editCategory($category_id, $data) {]]></search>
+      <add position="after"><![CDATA[
+$this->db->query("
+  DELETE FROM `" . DB_PREFIX . "category_to_sticker`
+  WHERE category_id = '" . (int)$category_id . "'
+");
+
+if (isset($data['category_sticker']) && is_array($data['category_sticker'])) {
+  foreach ($data['category_sticker'] as $product_sticker_id) {
+    $this->db->query("
+      INSERT IGNORE INTO `" . DB_PREFIX . "category_to_sticker`
+      SET category_id = '" . (int)$category_id . "',
+          product_sticker_id = '" . (int)$product_sticker_id . "'
+    ");
+  }
+}
+    ]]></add>
+    </operation>
+
+    <!-- delete category stickers -->
+    <operation>
+      <search><![CDATA[public function deleteCategory($category_id) {]]></search>
+      <add position="after"><![CDATA[
+$this->db->query("
+  DELETE FROM `" . DB_PREFIX . "category_to_sticker`
+  WHERE category_id = '" . (int)$category_id . "'
+");
+    ]]></add>
+    </operation>
+
+    <!-- category list filter by sticker -->
+    <operation>
+      <search><![CDATA[$sql .= " GROUP BY cp.category_id";]]></search>
+      <add position="before"><![CDATA[
+if (!empty($data['filter_sticker'])) {
+  $sql .= " AND cp.category_id IN (
+    SELECT cts.category_id
+    FROM `" . DB_PREFIX . "category_to_sticker` cts
+    WHERE cts.product_sticker_id = '" . (int)$data['filter_sticker'] . "'
+  )";
+}
+  ]]></add>
+    </operation>
+
+  </file>
+
+  <!-- ================= ADMIN: CATEGORY FORM TEMPLATE ================= -->
+  <file path="admin/view/template/catalog/category_form.twig">
+
+    <!-- add stickers tab -->
+    <operation>
+      <search><![CDATA[<li><a href="#tab-seo" data-toggle="tab">{{ tab_seo }}</a></li>]]></search>
+      <add position="before"><![CDATA[
+<li><a href="#tab-stickers" data-toggle="tab">{{ tab_stickers }}</a></li>
+    ]]></add>
+    </operation>
+
+    <!-- add stickers tab content -->
+    <operation>
+      <search><![CDATA[<div class="tab-pane" id="tab-seo">]]></search>
+      <add position="before"><![CDATA[
+<div class="tab-pane" id="tab-stickers">
+  <div class="form-group">
+    <label class="col-sm-2 control-label">{{ tab_stickers }}</label>
+    <div class="col-sm-10">
+      <div class="well well-sm" style="height:200px; overflow:auto;">
+        {% if stickers %}
+          {% for sticker in stickers %}
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" name="category_sticker[]" value="{{ sticker.product_sticker_id }}"
+                  {% if sticker.product_sticker_id in category_sticker %}checked="checked"{% endif %} />
+                {{ sticker.name }}
+              </label>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">{{ text_stickers_none }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+    ]]></add>
+    </operation>
+
+  </file>
+
+  <!-- ================= ADMIN: CATEGORY LIST TEMPLATE ================= -->
+  <file path="admin/view/template/catalog/category_list.twig">
+
+    <operation>
+      <search><![CDATA[<form action="{{ delete }}" method="post" enctype="multipart/form-data" id="form-category">]]></search>
+      <add position="before"><![CDATA[
+<div class="well">
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="form-group">
+        <label class="control-label" for="input-filter-sticker">{{ text_filter_sticker }}</label>
+        <select name="filter_sticker" id="input-filter-sticker" class="form-control">
+          <option value="">{{ text_select_stickers }}</option>
+          {% for sticker in filter_stickers %}
+            <option value="{{ sticker.product_sticker_id }}" {% if sticker.product_sticker_id == filter_sticker %}selected="selected"{% endif %}>
+              {{ sticker.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="col-sm-2">
+      <div class="form-group">
+        <label class="control-label">&nbsp;</label>
+        <button type="button" id="button-filter-sticker" class="btn btn-primary btn-block">
+          <i class="fa fa-filter"></i> {{ button_filter }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[{{ footer }}]]></search>
+      <add position="before"><![CDATA[
+<script type="text/javascript"><!--
+$('#button-filter-sticker').on('click', function() {
+  var url = 'index.php?route=catalog/category&user_token={{ user_token }}';
+
+  var filter_sticker = $('select[name=\'filter_sticker\']').val();
+
+  if (filter_sticker) {
+    url += '&filter_sticker=' + encodeURIComponent(filter_sticker);
+  }
+
+  location = url;
+});
+//--></script>
+  ]]></add>
+    </operation>
+
+  </file>
+
+  <!-- ================= ADMIN: PRODUCT ================= -->
+  <file path="admin/controller/catalog/product.php">
+
+    <operation>
+      <search><![CDATA[protected function getForm() {]]></search>
+      <add position="after"><![CDATA[
+$this->load->language('extension/module/product_sticker');
+$this->load->model('extension/module/product_sticker');
+
+$data['tab_stickers'] = $this->language->get('tab_stickers');
+$data['text_stickers_none'] = $this->language->get('text_stickers_none');
+$data['help_product_stickers'] = $this->language->get('help_product_stickers');
+
+$data['stickers'] = $this->model_extension_module_product_sticker->getStickers();
+
+if (isset($this->request->post['product_sticker'])) {
+  $data['product_sticker'] = array_map('intval', $this->request->post['product_sticker']);
+} elseif (isset($this->request->get['product_id'])) {
+  $data['product_sticker'] = $this->model_catalog_product->getProductStickers((int)$this->request->get['product_id']);
+} else {
+  $data['product_sticker'] = array();
+}
+  ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[protected function getList() {]]></search>
+      <add position="after"><![CDATA[
+$this->load->language('extension/module/product_sticker');
+$this->load->model('extension/module/product_sticker');
+
+$data['text_filter_sticker'] = $this->language->get('text_filter_sticker');
+$data['text_all_stickers'] = $this->language->get('text_all_stickers');
+
+$data['filter_stickers'] = $this->model_extension_module_product_sticker->getStickers();
+
+if (isset($this->request->get['filter_sticker']) && $this->request->get['filter_sticker'] !== '') {
+  $filter_sticker = (int)$this->request->get['filter_sticker'];
+} else {
+  $filter_sticker = '';
+}
+
+$data['filter_sticker'] = $filter_sticker;
+  ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$filter_data = array(]]></search>
+      <add position="after"><![CDATA[
+      'filter_sticker' => $filter_sticker,
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$url = '';]]></search>
+      <add position="after"><![CDATA[
+if (isset($this->request->get['filter_sticker']) && $this->request->get['filter_sticker'] !== '') {
+  $url .= '&filter_sticker=' . (int)$this->request->get['filter_sticker'];
+}
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$json = array();]]></search>
+      <add position="after"><![CDATA[
+if (isset($this->request->get['filter_sticker']) && $this->request->get['filter_sticker'] !== '') {
+  $filter_sticker = (int)$this->request->get['filter_sticker'];
+} else {
+  $filter_sticker = '';
+}
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA['filter_name'  => $filter_name,]]></search>
+      <add position="after"><![CDATA[
+        'filter_sticker' => $filter_sticker,
+    ]]></add>
+    </operation>
+
+  </file>
+
+  <file path="admin/model/catalog/product.php">
+
+    <operation>
+      <search><![CDATA[class ModelCatalogProduct extends Model {]]></search>
+      <add position="after"><![CDATA[
+public function getProductStickers($product_id) {
+  $sticker_data = array();
+
+  $query = $this->db->query("
+    SELECT product_sticker_id
+    FROM `" . DB_PREFIX . "product_to_sticker`
+    WHERE product_id = '" . (int)$product_id . "'
+  ");
+
+  foreach ($query->rows as $result) {
+    $sticker_data[] = (int)$result['product_sticker_id'];
+  }
+
+  return $sticker_data;
+}
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$product_id = $this->db->getLastId();]]></search>
+      <add position="after"><![CDATA[
+if (isset($data['product_sticker']) && is_array($data['product_sticker'])) {
+  foreach ($data['product_sticker'] as $product_sticker_id) {
+    $this->db->query("
+      INSERT IGNORE INTO `" . DB_PREFIX . "product_to_sticker`
+      SET product_id = '" . (int)$product_id . "',
+          product_sticker_id = '" . (int)$product_sticker_id . "'
+    ");
+  }
+}
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[public function editProduct($product_id, $data) {]]></search>
+      <add position="after"><![CDATA[
+$this->db->query("
+  DELETE FROM `" . DB_PREFIX . "product_to_sticker`
+  WHERE product_id = '" . (int)$product_id . "'
+");
+
+if (isset($data['product_sticker']) && is_array($data['product_sticker'])) {
+  foreach ($data['product_sticker'] as $product_sticker_id) {
+    $this->db->query("
+      INSERT IGNORE INTO `" . DB_PREFIX . "product_to_sticker`
+      SET product_id = '" . (int)$product_id . "',
+          product_sticker_id = '" . (int)$product_sticker_id . "'
+    ");
+  }
+}
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[public function deleteProduct($product_id) {]]></search>
+      <add position="after"><![CDATA[
+$this->db->query("
+  DELETE FROM `" . DB_PREFIX . "product_to_sticker`
+  WHERE product_id = '" . (int)$product_id . "'
+");
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$sort_data = array(]]></search>
+      <add position="before"><![CDATA[
+if (!empty($data['filter_sticker'])) {
+  $sql .= " AND p.product_id IN (
+    SELECT pts.product_id
+    FROM `" . DB_PREFIX . "product_to_sticker` pts
+    WHERE pts.product_sticker_id = '" . (int)$data['filter_sticker'] . "'
+  )";
+}
+    ]]></add>
+    </operation>
+
+  </file>
+
+  <file path="admin/view/template/catalog/product_form.twig">
+
+    <operation>
+      <search><![CDATA[<li><a href="#tab-links" data-toggle="tab">{{ tab_links }}</a></li>]]></search>
+      <add position="after"><![CDATA[
+<li><a href="#tab-product-stickers" data-toggle="tab">{{ tab_stickers }}</a></li>
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[<div class="tab-pane" id="tab-attribute">]]></search>
+      <add position="before"><![CDATA[
+<div class="tab-pane" id="tab-product-stickers">
+  <div class="form-group">
+    <label class="col-sm-2 control-label">{{ tab_stickers }}</label>
+    <div class="col-sm-10">
+      <div class="well well-sm" style="height:220px; overflow:auto;">
+        {% if stickers %}
+          {% for sticker in stickers %}
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" name="product_sticker[]" value="{{ sticker.product_sticker_id }}"
+                  {% if sticker.product_sticker_id in product_sticker %}checked="checked"{% endif %} />
+                {{ sticker.name }}
+              </label>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">{{ text_stickers_none }}</p>
+        {% endif %}
+      </div>
+      <p class="help-block">{{ help_product_stickers }}</p>
+    </div>
+  </div>
+</div>
+    ]]></add>
+    </operation>
+
+  </file>
+
+  <file path="admin/view/template/catalog/product_list.twig">
+
+    <operation>
+      <search><![CDATA[<label class="control-label" for="input-name">{{ entry_name }}</label>]]></search>
+      <add position="before"><![CDATA[
+<label class="control-label" for="input-filter-sticker">{{ text_filter_sticker }}</label>
+<select name="filter_sticker" id="input-filter-sticker" class="form-control">
+  <option value="">{{ text_all_stickers }}</option>
+  {% for sticker in filter_stickers %}
+    <option value="{{ sticker.product_sticker_id }}" {% if sticker.product_sticker_id == filter_sticker %}selected="selected"{% endif %}>
+      {{ sticker.name }}
+    </option>
+  {% endfor %}
+</select>
+<br />
+    ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[var url = '';]]></search>
+      <add position="after"><![CDATA[
+var filter_sticker = $('select[name=\'filter_sticker\']').val();
+
+if (filter_sticker) {
+  url += '&filter_sticker=' + encodeURIComponent(filter_sticker);
+}
+    ]]></add>
+    </operation>
+
+  </file>
+
+  <!-- ================= FRONTEND: PRODUCT PAGE ================= -->
+  <file path="catalog/controller/product/product.php">
+    <operation>
+      <search><![CDATA[$data['heading_title'] = $product_info['name'];]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+$data['stickers'] = $this->model_extension_module_product_sticker->getStickersByProductId($product_id);
+      ]]></add>
+    </operation>
+  </file>
+
+  <!-- ================= FRONTEND: CATEGORY LIST ================= -->
+  <file path="catalog/controller/product/category.php">
+    <operation>
+      <search><![CDATA[$this->load->model('catalog/product');]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+      ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$data['products'][] = array(]]></search>
+      <add position="after"><![CDATA[
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($result['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+  <!-- ================= FRONTEND: SEARCH LIST ================= -->
+  <file path="catalog/controller/product/search.php">
+    <operation>
+      <search><![CDATA[$this->load->model('catalog/product');]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+      ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$data['products'][] = array(]]></search>
+      <add position="after"><![CDATA[
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($result['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+  <!-- ================= FRONTEND: MANUFACTURER LIST ================= -->
+  <file path="catalog/controller/product/manufacturer.php">
+    <operation>
+      <search><![CDATA[$this->load->model('catalog/product');]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+      ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$data['products'][] = array(]]></search>
+      <add position="after"><![CDATA[
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($result['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+  <!-- ================= FRONTEND: SPECIAL LIST ================= -->
+  <file path="catalog/controller/product/special.php">
+    <operation>
+      <search><![CDATA[$this->load->model('catalog/product');]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+      ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$data['products'][] = array(]]></search>
+      <add position="after"><![CDATA[
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($result['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+  <!-- ================= FRONTEND: MODULES ================= -->
+  <file path="catalog/controller/extension/module/bestseller.php">
+    <operation>
+      <search><![CDATA[$this->load->model('catalog/product');]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+      ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$data['products'][] = array(]]></search>
+      <add position="after"><![CDATA[
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/controller/extension/module/featured.php">
+    <operation>
+      <search><![CDATA[$this->load->model('catalog/product');]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+      ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$data['products'][] = array(]]></search>
+      <add position="after"><![CDATA[
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/controller/extension/module/latest.php">
+    <operation>
+      <search><![CDATA[$this->load->model('catalog/product');]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+      ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$data['products'][] = array(]]></search>
+      <add position="after"><![CDATA[
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/controller/extension/module/special.php">
+    <operation>
+      <search><![CDATA[$this->load->model('catalog/product');]]></search>
+      <add position="after"><![CDATA[
+$this->load->model('extension/module/product_sticker');
+      ]]></add>
+    </operation>
+
+    <operation>
+      <search><![CDATA[$data['products'][] = array(]]></search>
+      <add position="after"><![CDATA[
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+</modification>

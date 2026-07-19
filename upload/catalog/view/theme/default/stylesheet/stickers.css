@@ -1,0 +1,20 @@
+.product-stickers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+}
+
+.sticker {
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 2px;
+    font-size: 12px;
+    border-radius: 3px;
+}
+
+.sticker.top-left { top: 5px; left: 5px; position: absolute; }
+.sticker.top-right { top: 5px; right: 5px; position: absolute; }
+.sticker.bottom-left { bottom: 5px; left: 5px; position: absolute; }
+.sticker.bottom-right { bottom: 5px; right: 5px; position: absolute; }
+.sticker.bottom { bottom: 5px; left: 50%; transform: translateX(-50%); position: absolute; }
