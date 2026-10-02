@@ -143,7 +143,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add "dist/${PACKAGE_NAME}" dist/SHA256SUMS
+          git add -f "dist/${PACKAGE_NAME}"
+          git add dist/SHA256SUMS
 
           if git diff --cached --quiet; then
             echo "No dist changes to commit."
