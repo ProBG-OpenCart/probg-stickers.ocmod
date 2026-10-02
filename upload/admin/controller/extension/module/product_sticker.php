@@ -56,7 +56,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
     $this->ensureSystemStickers();
   }
 
-  public function upgrade() {
+  private function upgrade() {
     $this->load->model('setting/setting');
 
     $version = $this->config->get('module_product_sticker_version');
@@ -87,6 +87,8 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
     if (!$version || version_compare($version, '2.1.0', '<')) {
       $this->ensureSystemStickerSchema();
+      $this->migrateStorageSchema();
+      $this->ensureMappingIndexes();
       $this->ensureSystemStickers();
 
       $settings = $this->model_setting_setting->getSetting('module_product_sticker');
@@ -126,9 +128,21 @@ class ControllerExtensionModuleProductSticker extends Controller {
   }
 
   public function update() {
+    $this->load->language('extension/module/product_sticker');
+
+    if (!$this->user->hasPermission('modify', 'extension/module/product_sticker')) {
+      $this->session->data['warning'] = $this->language->get('error_permission');
+
+      $this->response->redirect(
+        $this->url->link('extension/module/product_sticker', 'user_token=' . $this->session->data['user_token'], true)
+      );
+
+      return;
+    }
+
     $this->upgrade();
 
-    $this->session->data['success'] = 'Module updated successfully!';
+    $this->session->data['success'] = $this->language->get('text_update_success');
 
     $this->response->redirect(
       $this->url->link('extension/module/product_sticker', 'user_token=' . $this->session->data['user_token'], true)
@@ -552,6 +566,38 @@ class ControllerExtensionModuleProductSticker extends Controller {
         ADD `system_key` varchar(32) DEFAULT NULL AFTER `product_sticker_id`,
         ADD UNIQUE KEY `system_key` (`system_key`)
       ");
+    }
+  }
+
+  private function migrateStorageSchema() {
+    $tables = array(
+      'product_sticker',
+      'product_sticker_description',
+      'product_to_sticker',
+      'category_to_sticker'
+    );
+
+    foreach ($tables as $table) {
+      $this->db->query(
+        "ALTER TABLE `" . DB_PREFIX . $table . "` ENGINE=InnoDB, CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
+      );
+    }
+  }
+
+  private function ensureMappingIndexes() {
+    $this->ensureIndex('product_to_sticker', 'product_sticker_id', 'product_sticker_id');
+    $this->ensureIndex('category_to_sticker', 'product_sticker_id', 'product_sticker_id');
+  }
+
+  private function ensureIndex($table, $index_name, $column_name) {
+    $query = $this->db->query(
+      "SHOW INDEX FROM `" . DB_PREFIX . $table . "` WHERE Key_name = '" . $this->db->escape($index_name) . "'"
+    );
+
+    if (!$query->num_rows) {
+      $this->db->query(
+        "ALTER TABLE `" . DB_PREFIX . $table . "` ADD KEY `" . $this->db->escape($index_name) . "` (`" . $this->db->escape($column_name) . "`)"
+      );
     }
   }
 
