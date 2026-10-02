@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <modification>
   <name>ProBG Product Stickers for OpenCart</name>
-  <code>probg_product_stickers_2_1_0</code>
+  <code>probg_product_stickers_2_0</code>
   <version>2.1.0</version>
   <author>Veselin Totev, ProBG Web Studio</author>
   <link>https://www.probg.com</link>
@@ -637,6 +637,144 @@ $this->load->model('extension/module/product_sticker');
       <search><![CDATA[$data['products'][] = array(]]></search>
       <add position="after"><![CDATA[
         'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+
+
+  <!-- ================= DEFAULT THEME: PRODUCT STICKERS ================= -->
+  <file path="catalog/view/theme/default/template/product/product.twig">
+    <operation>
+      <search><![CDATA[<a class="thumbnail" href="{{ popup }}" title="{{ heading_title }}">]]></search>
+      <add position="before"><![CDATA[
+{% if stickers %}
+  <div class="product-stickers product-stickers-{{ stickers[0].position }}">
+    {% for sticker in stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/view/theme/default/template/product/category.twig">
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/view/theme/default/template/product/search.twig">
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/view/theme/default/template/product/manufacturer_info.twig">
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/view/theme/default/template/product/special.twig">
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/view/theme/default/template/extension/module/bestseller.twig">
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/view/theme/default/template/extension/module/featured.twig">
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/view/theme/default/template/extension/module/latest.twig">
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/view/theme/default/template/extension/module/special.twig">
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
       ]]></add>
     </operation>
   </file>
