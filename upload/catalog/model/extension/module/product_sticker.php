@@ -238,6 +238,12 @@ class ModelExtensionModuleProductSticker extends Model {
   }
 
   private function getFallbackLanguageId() {
+    static $fallback_language_id = null;
+
+    if ($fallback_language_id !== null) {
+      return $fallback_language_id;
+    }
+
     $language_code = (string)$this->config->get('config_language');
 
     if ($language_code !== '') {
@@ -249,11 +255,15 @@ class ModelExtensionModuleProductSticker extends Model {
       ");
 
       if ($query->num_rows) {
-        return (int)$query->row['language_id'];
+        $fallback_language_id = (int)$query->row['language_id'];
+
+        return $fallback_language_id;
       }
     }
 
-    return (int)$this->config->get('config_language_id');
+    $fallback_language_id = (int)$this->config->get('config_language_id');
+
+    return $fallback_language_id;
   }
 
   private function getGlobalPosition() {
