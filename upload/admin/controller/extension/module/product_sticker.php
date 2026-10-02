@@ -61,6 +61,11 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
     $version = $this->config->get('module_product_sticker_version');
 
+    // Safe, idempotent integrity checks. ALTER statements run only when required.
+    $this->ensureSystemStickerSchema();
+    $this->migrateStorageSchema();
+    $this->ensureMappingIndexes();
+
     if (!$version || version_compare($version, '2.0', '<')) {
       $this->db->query("
         CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "category_to_sticker` (
@@ -86,9 +91,6 @@ class ControllerExtensionModuleProductSticker extends Controller {
     }
 
     if (!$version || version_compare($version, '2.1.0', '<')) {
-      $this->ensureSystemStickerSchema();
-      $this->migrateStorageSchema();
-      $this->ensureMappingIndexes();
       $this->ensureSystemStickers();
 
       $settings = $this->model_setting_setting->getSetting('module_product_sticker');
@@ -578,9 +580,28 @@ class ControllerExtensionModuleProductSticker extends Controller {
     );
 
     foreach ($tables as $table) {
-      $this->db->query(
-        "ALTER TABLE `" . DB_PREFIX . $table . "` ENGINE=InnoDB, CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
-      );
+      $table_name = DB_PREFIX . $table;
+
+      $query = $this->db->query("
+        SELECT ENGINE, TABLE_COLLATION
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = '" . $this->db->escape($table_name) . "'
+        LIMIT 1
+      ");
+
+      if (!$query->num_rows) {
+        continue;
+      }
+
+      $engine = isset($query->row['ENGINE']) ? strtolower($query->row['ENGINE']) : '';
+      $collation = isset($query->row['TABLE_COLLATION']) ? strtolower($query->row['TABLE_COLLATION']) : '';
+
+      if ($engine !== 'innodb' || strpos($collation, 'utf8mb4_') !== 0) {
+        $this->db->query(
+          "ALTER TABLE `" . $table_name . "` ENGINE=InnoDB, CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
+        );
+      }
     }
   }
 
