@@ -57,8 +57,7 @@ class ModelExtensionModuleProductSticker extends Model {
       SET text_color = '" . $this->db->escape($prepared['text_color']) . "',
           color = '" . $this->db->escape($prepared['color']) . "',
           sort_order = '" . (int)$prepared['sort_order'] . "',
-          status = '" . (int)$prepared['status'] . "',
-          system_key = NULL
+          status = '" . (int)$prepared['status'] . "'
     ");
 
     $product_sticker_id = (int)$this->db->getLastId();
@@ -112,6 +111,10 @@ class ModelExtensionModuleProductSticker extends Model {
   }
 
   public function isSystemSticker($product_sticker_id) {
+    if (!$this->hasSystemKeyColumn()) {
+      return false;
+    }
+
     $query = $this->db->query("
       SELECT system_key
       FROM `" . DB_PREFIX . "product_sticker`
@@ -123,6 +126,10 @@ class ModelExtensionModuleProductSticker extends Model {
   }
 
   public function setSystemStickerStatus($system_key, $status) {
+    if (!$this->hasSystemKeyColumn()) {
+      return false;
+    }
+
     $allowed = array('new', 'sale');
 
     if (!in_array($system_key, $allowed, true)) {
@@ -139,6 +146,7 @@ class ModelExtensionModuleProductSticker extends Model {
   }
 
   private function getStickerList($assignable_only) {
+    $has_system_key = $this->hasSystemKeyColumn();
     $admin_language_id = (int)$this->config->get('config_admin_language_id');
     $store_language_id = (int)$this->config->get('config_language_id');
 
@@ -153,15 +161,37 @@ class ModelExtensionModuleProductSticker extends Model {
         AND psd_store.language_id = '" . $store_language_id . "'
     ";
 
-    if ($assignable_only) {
+    if ($assignable_only && $has_system_key) {
       $sql .= " WHERE ps.system_key IS NULL OR ps.system_key = ''";
     }
 
-    $sql .= " ORDER BY CASE WHEN ps.system_key IS NULL OR ps.system_key = '' THEN 1 ELSE 0 END ASC, ps.sort_order ASC, name ASC";
+    if ($has_system_key) {
+      $sql .= " ORDER BY CASE WHEN ps.system_key IS NULL OR ps.system_key = '' THEN 1 ELSE 0 END ASC, ps.sort_order ASC, name ASC";
+    } else {
+      $sql .= " ORDER BY ps.sort_order ASC, name ASC";
+    }
 
     $query = $this->db->query($sql);
 
     return $query->rows;
+  }
+
+  private function hasSystemKeyColumn() {
+    static $has_column = null;
+
+    if ($has_column !== null) {
+      return $has_column;
+    }
+
+    $query = $this->db->query("
+      SHOW COLUMNS
+      FROM `" . DB_PREFIX . "product_sticker`
+      LIKE 'system_key'
+    ");
+
+    $has_column = (bool)$query->num_rows;
+
+    return $has_column;
   }
 
   private function saveStickerDescriptions($product_sticker_id, $data) {
