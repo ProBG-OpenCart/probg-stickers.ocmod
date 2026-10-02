@@ -2,22 +2,23 @@
 class ModelExtensionModuleProductSticker extends Model {
 
   public function getStickers() {
-    $language_id = (int)$this->config->get('config_language_id');
-    $admin_language_id = (int)$this->config->get('config_admin_language_id');
+    return $this->getStickerList(false);
+  }
 
-    $query = $this->db->query("
-      SELECT ps.*, COALESCE(psd.name, psd2.name, '') AS name
-      FROM `" . DB_PREFIX . "product_sticker` ps
-      LEFT JOIN `" . DB_PREFIX . "product_sticker_description` psd 
-        ON ps.product_sticker_id = psd.product_sticker_id 
-        AND psd.language_id = '" . $language_id . "'
-      LEFT JOIN `" . DB_PREFIX . "product_sticker_description` psd2 
-        ON ps.product_sticker_id = psd2.product_sticker_id 
-        AND psd2.language_id = '" . $admin_language_id . "'
-      ORDER BY ps.sort_order ASC, name ASC
-    ");
+  public function getAssignableStickers() {
+    return $this->getStickerList(true);
+  }
 
-    return $query->rows;
+  public function getSystemStickers() {
+    $data = array();
+
+    foreach ($this->getStickers() as $sticker) {
+      if (!empty($sticker['system_key'])) {
+        $data[$sticker['system_key']] = $sticker;
+      }
+    }
+
+    return $data;
   }
 
   public function getSticker($product_sticker_id) {
@@ -56,7 +57,8 @@ class ModelExtensionModuleProductSticker extends Model {
       SET text_color = '" . $this->db->escape($prepared['text_color']) . "',
           color = '" . $this->db->escape($prepared['color']) . "',
           sort_order = '" . (int)$prepared['sort_order'] . "',
-          status = '" . (int)$prepared['status'] . "'
+          status = '" . (int)$prepared['status'] . "',
+          system_key = NULL
     ");
 
     $product_sticker_id = (int)$this->db->getLastId();
@@ -68,6 +70,11 @@ class ModelExtensionModuleProductSticker extends Model {
 
   public function editSticker($product_sticker_id, $data) {
     $product_sticker_id = (int)$product_sticker_id;
+
+    if ($this->isSystemSticker($product_sticker_id)) {
+      return false;
+    }
+
     $prepared = $this->prepareStickerData($data);
 
     $this->db->query("
@@ -85,15 +92,76 @@ class ModelExtensionModuleProductSticker extends Model {
     ");
 
     $this->saveStickerDescriptions($product_sticker_id, $data);
+
+    return true;
   }
 
   public function deleteSticker($product_sticker_id) {
     $product_sticker_id = (int)$product_sticker_id;
 
+    if ($this->isSystemSticker($product_sticker_id)) {
+      return false;
+    }
+
     $this->db->query("DELETE FROM `" . DB_PREFIX . "product_sticker` WHERE product_sticker_id = '" . $product_sticker_id . "'");
     $this->db->query("DELETE FROM `" . DB_PREFIX . "product_sticker_description` WHERE product_sticker_id = '" . $product_sticker_id . "'");
     $this->db->query("DELETE FROM `" . DB_PREFIX . "product_to_sticker` WHERE product_sticker_id = '" . $product_sticker_id . "'");
     $this->db->query("DELETE FROM `" . DB_PREFIX . "category_to_sticker` WHERE product_sticker_id = '" . $product_sticker_id . "'");
+
+    return true;
+  }
+
+  public function isSystemSticker($product_sticker_id) {
+    $query = $this->db->query("
+      SELECT system_key
+      FROM `" . DB_PREFIX . "product_sticker`
+      WHERE product_sticker_id = '" . (int)$product_sticker_id . "'
+      LIMIT 1
+    ");
+
+    return !empty($query->row['system_key']);
+  }
+
+  public function setSystemStickerStatus($system_key, $status) {
+    $allowed = array('new', 'sale');
+
+    if (!in_array($system_key, $allowed, true)) {
+      return false;
+    }
+
+    $this->db->query("
+      UPDATE `" . DB_PREFIX . "product_sticker`
+      SET status = '" . (!empty($status) ? 1 : 0) . "'
+      WHERE system_key = '" . $this->db->escape($system_key) . "'
+    ");
+
+    return true;
+  }
+
+  private function getStickerList($assignable_only) {
+    $admin_language_id = (int)$this->config->get('config_admin_language_id');
+    $store_language_id = (int)$this->config->get('config_language_id');
+
+    $sql = "
+      SELECT ps.*, COALESCE(psd_admin.name, psd_store.name, '') AS name
+      FROM `" . DB_PREFIX . "product_sticker` ps
+      LEFT JOIN `" . DB_PREFIX . "product_sticker_description` psd_admin
+        ON ps.product_sticker_id = psd_admin.product_sticker_id
+        AND psd_admin.language_id = '" . $admin_language_id . "'
+      LEFT JOIN `" . DB_PREFIX . "product_sticker_description` psd_store
+        ON ps.product_sticker_id = psd_store.product_sticker_id
+        AND psd_store.language_id = '" . $store_language_id . "'
+    ";
+
+    if ($assignable_only) {
+      $sql .= " WHERE ps.system_key IS NULL OR ps.system_key = ''";
+    }
+
+    $sql .= " ORDER BY CASE WHEN ps.system_key IS NULL OR ps.system_key = '' THEN 1 ELSE 0 END ASC, ps.sort_order ASC, name ASC";
+
+    $query = $this->db->query($sql);
+
+    return $query->rows;
   }
 
   private function saveStickerDescriptions($product_sticker_id, $data) {
