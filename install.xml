@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <modification>
   <name>ProBG Product Stickers for OpenCart</name>
-  <code>probg_product_stickers_2_0</code>
-  <version>2.0</version>
+  <code>probg_product_stickers_2_1_0</code>
+  <version>2.1.0</version>
   <author>Veselin Totev, ProBG Web Studio</author>
   <link>https://www.probg.com</link>
 
@@ -19,7 +19,7 @@ $this->load->model('extension/module/product_sticker');
 $data['tab_stickers'] = $this->language->get('tab_stickers');
 $data['text_stickers_none'] = $this->language->get('text_stickers_none');
 
-$data['stickers'] = $this->model_extension_module_product_sticker->getStickers();
+$data['stickers'] = $this->model_extension_module_product_sticker->getAssignableStickers();
 
 if (isset($this->request->post['category_sticker'])) {
   $data['category_sticker'] = array_map('intval', $this->request->post['category_sticker']);
@@ -40,9 +40,10 @@ $this->load->model('extension/module/product_sticker');
 $data['user_token'] = $this->session->data['user_token'];
 
 $data['text_filter_sticker'] = $this->language->get('text_filter_sticker');
+$data['text_select_stickers'] = $this->language->get('text_select_stickers');
 $data['text_all_stickers'] = $this->language->get('text_all_stickers');
 
-$data['filter_stickers'] = $this->model_extension_module_product_sticker->getStickers();
+$data['filter_stickers'] = $this->model_extension_module_product_sticker->getAssignableStickers();
 
 if (isset($this->request->get['filter_sticker']) && $this->request->get['filter_sticker'] !== '') {
   $filter_sticker = (int)$this->request->get['filter_sticker'];
@@ -273,7 +274,7 @@ $data['tab_stickers'] = $this->language->get('tab_stickers');
 $data['text_stickers_none'] = $this->language->get('text_stickers_none');
 $data['help_product_stickers'] = $this->language->get('help_product_stickers');
 
-$data['stickers'] = $this->model_extension_module_product_sticker->getStickers();
+$data['stickers'] = $this->model_extension_module_product_sticker->getAssignableStickers();
 
 if (isset($this->request->post['product_sticker'])) {
   $data['product_sticker'] = array_map('intval', $this->request->post['product_sticker']);
@@ -294,7 +295,7 @@ $this->load->model('extension/module/product_sticker');
 $data['text_filter_sticker'] = $this->language->get('text_filter_sticker');
 $data['text_all_stickers'] = $this->language->get('text_all_stickers');
 
-$data['filter_stickers'] = $this->model_extension_module_product_sticker->getStickers();
+$data['filter_stickers'] = $this->model_extension_module_product_sticker->getAssignableStickers();
 
 if (isset($this->request->get['filter_sticker']) && $this->request->get['filter_sticker'] !== '') {
   $filter_sticker = (int)$this->request->get['filter_sticker'];
@@ -636,6 +637,17 @@ $this->load->model('extension/module/product_sticker');
       <search><![CDATA[$data['products'][] = array(]]></search>
       <add position="after"><![CDATA[
         'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+      ]]></add>
+    </operation>
+  </file>
+
+
+  <!-- ================= STOREFRONT: STICKER STYLES ================= -->
+  <file path="catalog/controller/common/header.php">
+    <operation>
+      <search><![CDATA[$data['styles'] = $this->document->getStyles();]]></search>
+      <add position="before"><![CDATA[
+$this->document->addStyle('catalog/view/theme/default/stylesheet/stickers.css');
       ]]></add>
     </operation>
   </file>
