@@ -12,6 +12,7 @@ $_['text_enabled'] = 'Активен';
 $_['text_disabled'] = 'Неактивен';
 $_['text_yes'] = 'Да';
 $_['text_no'] = 'Не';
+$_['text_days'] = 'дни';
 $_['text_system'] = 'Автоматизиран';
 $_['text_manual'] = 'Ръчен';
 $_['text_tab_stickers'] = 'Стикери';
