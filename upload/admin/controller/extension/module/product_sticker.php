@@ -45,10 +45,12 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
     $this->load->model('setting/setting');
 
-    $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_position', 'top-left');
-    $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_new_days', 30);
-    $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_sale_show_discount', 1);
-    $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_version', '2.1.0');
+    $this->model_setting_setting->editSetting('module_product_sticker', array(
+      'module_product_sticker_position' => 'top-left',
+      'module_product_sticker_new_days' => 30,
+      'module_product_sticker_sale_show_discount' => 1,
+      'module_product_sticker_version' => '2.1.0'
+    ));
 
     $this->ensureSystemStickerSchema();
     $this->ensureSystemStickers();
@@ -81,38 +83,44 @@ class ControllerExtensionModuleProductSticker extends Controller {
           DROP COLUMN `position`
         ");
       }
-
-      if (!$this->config->get('module_product_sticker_position')) {
-        $this->model_setting_setting->editSettingValue(
-          'module_product_sticker',
-          'module_product_sticker_position',
-          'top-left'
-        );
-      }
     }
 
     if (!$version || version_compare($version, '2.1.0', '<')) {
       $this->ensureSystemStickerSchema();
+      $this->ensureSystemStickers();
 
       $settings = $this->model_setting_setting->getSetting('module_product_sticker');
 
-      if (!array_key_exists('module_product_sticker_new_days', $settings)) {
-        $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_new_days', 30);
-        $this->config->set('module_product_sticker_new_days', 30);
+      $position = isset($settings['module_product_sticker_position'])
+        ? $settings['module_product_sticker_position']
+        : $this->config->get('module_product_sticker_position');
+
+      if (!in_array($position, $this->getAllowedPositions(), true)) {
+        $position = 'top-left';
       }
 
-      if (!array_key_exists('module_product_sticker_sale_show_discount', $settings)) {
-        $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_sale_show_discount', 1);
-        $this->config->set('module_product_sticker_sale_show_discount', 1);
+      $new_days = isset($settings['module_product_sticker_new_days'])
+        ? (int)$settings['module_product_sticker_new_days']
+        : 30;
+
+      if ($new_days < 1 || $new_days > 3650) {
+        $new_days = 30;
       }
 
-      $this->ensureSystemStickers();
+      $show_discount = array_key_exists('module_product_sticker_sale_show_discount', $settings)
+        ? (!empty($settings['module_product_sticker_sale_show_discount']) ? 1 : 0)
+        : 1;
 
-      $this->model_setting_setting->editSettingValue(
-        'module_product_sticker',
-        'module_product_sticker_version',
-        '2.1.0'
-      );
+      $settings['module_product_sticker_position'] = $position;
+      $settings['module_product_sticker_new_days'] = $new_days;
+      $settings['module_product_sticker_sale_show_discount'] = $show_discount;
+      $settings['module_product_sticker_version'] = '2.1.0';
+
+      $this->model_setting_setting->editSetting('module_product_sticker', $settings);
+
+      $this->config->set('module_product_sticker_position', $position);
+      $this->config->set('module_product_sticker_new_days', $new_days);
+      $this->config->set('module_product_sticker_sale_show_discount', $show_discount);
       $this->config->set('module_product_sticker_version', '2.1.0');
     }
   }
@@ -162,9 +170,18 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $new_status = !empty($this->request->post['system_sticker_new_status']) ? 1 : 0;
       $sale_status = !empty($this->request->post['system_sticker_sale_status']) ? 1 : 0;
 
-      $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_position', $position);
-      $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_new_days', $new_days);
-      $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_sale_show_discount', $show_discount);
+      $settings = $this->model_setting_setting->getSetting('module_product_sticker');
+      $settings['module_product_sticker_position'] = $position;
+      $settings['module_product_sticker_new_days'] = $new_days;
+      $settings['module_product_sticker_sale_show_discount'] = $show_discount;
+      $settings['module_product_sticker_version'] = '2.1.0';
+
+      $this->model_setting_setting->editSetting('module_product_sticker', $settings);
+
+      $this->config->set('module_product_sticker_position', $position);
+      $this->config->set('module_product_sticker_new_days', $new_days);
+      $this->config->set('module_product_sticker_sale_show_discount', $show_discount);
+      $this->config->set('module_product_sticker_version', '2.1.0');
 
       $this->model_extension_module_product_sticker->setSystemStickerStatus('new', $new_status);
       $this->model_extension_module_product_sticker->setSystemStickerStatus('sale', $sale_status);
