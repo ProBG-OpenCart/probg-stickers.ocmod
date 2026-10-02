@@ -8,7 +8,8 @@ class ModelExtensionModuleProductSticker extends Model {
     $language_id = (int)$this->config->get('config_language_id');
     $fallback_language_id = $this->getFallbackLanguageId();
     $position = $this->getGlobalPosition();
-    $new_days = max(1, (int)$this->config->get('module_product_sticker_new_days'));
+    $has_system_key = $this->hasSystemKeyColumn();
+    $new_days = (int)$this->config->get('module_product_sticker_new_days');
     $show_discount = $this->config->get('module_product_sticker_sale_show_discount') ? 1 : 0;
 
     if ($new_days < 1) {
@@ -21,17 +22,21 @@ class ModelExtensionModuleProductSticker extends Model {
       $fallback_language_id,
       $position,
       $new_days,
-      $show_discount
+      $show_discount,
+      $has_system_key ? 1 : 0
     ));
 
     if (isset($cache[$cache_key])) {
       return $cache[$cache_key];
     }
 
+    $system_key_select = $has_system_key ? "ps.system_key" : "'' AS system_key";
+    $system_key_where = $has_system_key ? "AND (ps.system_key IS NULL OR ps.system_key = '')" : "";
+
     $query = $this->db->query("
       SELECT DISTINCT
         ps.product_sticker_id,
-        ps.system_key,
+        " . $system_key_select . ",
         ps.color,
         ps.text_color,
         ps.sort_order,
@@ -59,7 +64,7 @@ class ModelExtensionModuleProductSticker extends Model {
         AND cts.category_id = p2c.category_id
 
       WHERE ps.status = '1'
-        AND (ps.system_key IS NULL OR ps.system_key = '')
+        " . $system_key_where . "
         AND (
           pts.product_id IS NOT NULL
           OR cts.category_id IS NOT NULL
@@ -76,8 +81,10 @@ class ModelExtensionModuleProductSticker extends Model {
       $stickers[] = $row;
     }
 
-    foreach ($this->getAutomatedStickers($product_id, $language_id, $fallback_language_id, $position, $new_days, $show_discount) as $sticker) {
-      $stickers[] = $sticker;
+    if ($has_system_key) {
+      foreach ($this->getAutomatedStickers($product_id, $language_id, $fallback_language_id, $position, $new_days, $show_discount) as $sticker) {
+        $stickers[] = $sticker;
+      }
     }
 
     usort($stickers, function($a, $b) {
@@ -91,6 +98,24 @@ class ModelExtensionModuleProductSticker extends Model {
     $cache[$cache_key] = $stickers;
 
     return $stickers;
+  }
+
+  private function hasSystemKeyColumn() {
+    static $has_column = null;
+
+    if ($has_column !== null) {
+      return $has_column;
+    }
+
+    $query = $this->db->query("
+      SHOW COLUMNS
+      FROM `" . DB_PREFIX . "product_sticker`
+      LIKE 'system_key'
+    ");
+
+    $has_column = (bool)$query->num_rows;
+
+    return $has_column;
   }
 
   private function getAutomatedStickers($product_id, $language_id, $fallback_language_id, $position, $new_days, $show_discount) {
