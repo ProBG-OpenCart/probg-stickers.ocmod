@@ -19,6 +19,7 @@
       </ul>
     </div>
   </div>
+
   <div class="container-fluid">
     {% if error_warning %}
       <div class="alert alert-danger alert-dismissible">
@@ -26,33 +27,37 @@
         <button type="button" class="close" data-dismiss="alert">&times;</button>
       </div>
     {% endif %}
+
     <div class="panel panel-default">
       <div class="panel-heading">
         <h3 class="panel-title"><i class="fa fa-tags"></i> {{ heading_title }}</h3>
       </div>
+
       <div class="panel-body">
         <ul class="nav nav-tabs">
           <li class="active">
             <a href="#tab-stickers" data-toggle="tab">
-              <i class="fa fa-tags"></i> Стикери
+              <i class="fa fa-tags"></i> {{ text_tab_stickers }}
             </a>
           </li>
           <li>
             <a href="#tab-settings" data-toggle="tab">
-              <i class="fa fa-cog"></i> Настройки
+              <i class="fa fa-cog"></i> {{ text_tab_settings }}
             </a>
           </li>
         </ul>
+
         <div class="tab-content">
           <div class="tab-pane active" id="tab-stickers">
             <div class="well well-sm">
               <a href="{{ add }}" data-toggle="tooltip" title="{{ text_add }}" class="btn btn-primary">
                 <i class="fa fa-plus"></i>
               </a>
-              <button type="submit" form="form-product-sticker" data-toggle="tooltip" title="{{ text_delete }}" class="btn btn-danger" onclick="return confirm('{{ text_confirm }}');">
+              <button type="submit" form="form-product-sticker" data-toggle="tooltip" title="{{ text_confirm }}" class="btn btn-danger" onclick="return confirm('{{ text_confirm }}');">
                 <i class="fa fa-trash-o"></i>
               </button>
             </div>
+
             <form action="{{ delete }}" method="post" enctype="multipart/form-data" id="form-product-sticker">
               <div class="table-responsive">
                 <table class="table table-bordered table-hover">
@@ -62,9 +67,10 @@
                       <input type="checkbox" onclick="$('input[name*=\'selected\']').prop('checked', this.checked);" />
                     </td>
                     <td class="text-left">{{ column_name }}</td>
-                    <td class="text-left">Цвят</td>
-                    <td class="text-left">Цвят на текста</td>
-                    <td class="text-right">Подредба</td>
+                    <td class="text-left">{{ column_color }}</td>
+                    <td class="text-left">{{ column_text }}</td>
+                    <td class="text-right">{{ column_sort_order }}</td>
+                    <td class="text-center">{{ column_type }}</td>
                     <td class="text-center">{{ column_status }}</td>
                     <td class="text-right">{{ column_action }}</td>
                   </tr>
@@ -74,18 +80,14 @@
                     {% for sticker in stickers %}
                       <tr>
                         <td class="text-center">
-                          <input type="checkbox" name="selected[]" value="{{ sticker.product_sticker_id }}" />
+                          {% if not sticker.is_system %}
+                            <input type="checkbox" name="selected[]" value="{{ sticker.product_sticker_id }}" />
+                          {% else %}
+                            <i class="fa fa-lock text-muted" data-toggle="tooltip" title="{{ text_system }}"></i>
+                          {% endif %}
                         </td>
                         <td class="text-left">
-                          <span style="
-                             display:inline-block;
-                             padding:5px 10px;
-                             background-color:{{ sticker.color }};
-                             color:{{ sticker.text_color }};
-                             border-radius:3px;
-                             font-size:12px;
-                             font-weight:600;
-                             ">
+                          <span style="display:inline-block;padding:5px 10px;background-color:{{ sticker.color }};color:{{ sticker.text_color }};border-radius:3px;font-size:12px;font-weight:600;">
                             {{ sticker.name }}
                           </span>
                         </td>
@@ -99,6 +101,13 @@
                         </td>
                         <td class="text-right">{{ sticker.sort_order }}</td>
                         <td class="text-center">
+                          {% if sticker.is_system %}
+                            <span class="label label-info">{{ text_system }}</span>
+                          {% else %}
+                            <span class="label label-default">{{ text_manual }}</span>
+                          {% endif %}
+                        </td>
+                        <td class="text-center">
                           {% if sticker.status %}
                             <span class="label label-success">{{ text_enabled }}</span>
                           {% else %}
@@ -106,15 +115,21 @@
                           {% endif %}
                         </td>
                         <td class="text-right">
-                          <a href="{{ sticker.edit }}" data-toggle="tooltip" title="{{ text_edit }}" class="btn btn-primary">
-                            <i class="fa fa-pencil"></i>
-                          </a>
+                          {% if sticker.is_system %}
+                            <span class="btn btn-default disabled" data-toggle="tooltip" title="{{ text_system }}">
+                              <i class="fa fa-lock"></i>
+                            </span>
+                          {% else %}
+                            <a href="{{ sticker.edit }}" data-toggle="tooltip" title="{{ text_edit }}" class="btn btn-primary">
+                              <i class="fa fa-pencil"></i>
+                            </a>
+                          {% endif %}
                         </td>
                       </tr>
                     {% endfor %}
                   {% else %}
                     <tr>
-                      <td class="text-center" colspan="7">{{ text_no_results }}</td>
+                      <td class="text-center" colspan="8">{{ text_no_results }}</td>
                     </tr>
                   {% endif %}
                   </tbody>
@@ -122,13 +137,12 @@
               </div>
             </form>
           </div>
+
           <div class="tab-pane" id="tab-settings">
             <form action="{{ save_settings }}" method="post" enctype="multipart/form-data" id="form-settings" class="form-horizontal">
               <div class="form-group">
-                <label class="col-sm-2 control-label" for="input-sticker-position">
-                  Позиция на стикерите
-                </label>
-                <div class="col-sm-10">
+                <label class="col-sm-3 control-label" for="input-sticker-position">{{ entry_sticker_position }}</label>
+                <div class="col-sm-9">
                   <select name="module_product_sticker_position" id="input-sticker-position" class="form-control">
                     {% for key, label in positions %}
                       <option value="{{ key }}" {% if key == module_product_sticker_position %}selected="selected"{% endif %}>
@@ -138,6 +152,54 @@
                   </select>
                 </div>
               </div>
+
+              <fieldset>
+                <legend>{{ text_automated_stickers }}</legend>
+
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="input-new-status">{{ entry_new_status }}</label>
+                  <div class="col-sm-9">
+                    <select name="system_sticker_new_status" id="input-new-status" class="form-control">
+                      <option value="1" {% if system_sticker_new_status %}selected="selected"{% endif %}>{{ text_enabled }}</option>
+                      <option value="0" {% if not system_sticker_new_status %}selected="selected"{% endif %}>{{ text_disabled }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="input-new-days">
+                    <span data-toggle="tooltip" title="{{ help_new_days }}">{{ entry_new_days }}</span>
+                  </label>
+                  <div class="col-sm-3">
+                    <div class="input-group">
+                      <input type="number" name="module_product_sticker_new_days" value="{{ module_product_sticker_new_days }}" min="1" max="3650" id="input-new-days" class="form-control" />
+                      <span class="input-group-addon">days</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="input-sale-status">{{ entry_sale_status }}</label>
+                  <div class="col-sm-9">
+                    <select name="system_sticker_sale_status" id="input-sale-status" class="form-control">
+                      <option value="1" {% if system_sticker_sale_status %}selected="selected"{% endif %}>{{ text_enabled }}</option>
+                      <option value="0" {% if not system_sticker_sale_status %}selected="selected"{% endif %}>{{ text_disabled }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="input-sale-discount">
+                    <span data-toggle="tooltip" title="{{ help_sale_show_discount }}">{{ entry_sale_show_discount }}</span>
+                  </label>
+                  <div class="col-sm-9">
+                    <select name="module_product_sticker_sale_show_discount" id="input-sale-discount" class="form-control">
+                      <option value="1" {% if module_product_sticker_sale_show_discount %}selected="selected"{% endif %}>{{ text_yes }}</option>
+                      <option value="0" {% if not module_product_sticker_sale_show_discount %}selected="selected"{% endif %}>{{ text_no }}</option>
+                    </select>
+                  </div>
+                </div>
+              </fieldset>
             </form>
           </div>
         </div>
