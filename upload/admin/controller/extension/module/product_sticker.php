@@ -312,8 +312,17 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
     $system_stickers = $this->model_extension_module_product_sticker->getSystemStickers();
 
-    $data['system_sticker_new_status'] = isset($system_stickers['new']) ? (int)$system_stickers['new']['status'] : 0;
-    $data['system_sticker_sale_status'] = isset($system_stickers['sale']) ? (int)$system_stickers['sale']['status'] : 0;
+    if (isset($this->request->post['system_sticker_new_status'])) {
+      $data['system_sticker_new_status'] = !empty($this->request->post['system_sticker_new_status']) ? 1 : 0;
+    } else {
+      $data['system_sticker_new_status'] = isset($system_stickers['new']) ? (int)$system_stickers['new']['status'] : 0;
+    }
+
+    if (isset($this->request->post['system_sticker_sale_status'])) {
+      $data['system_sticker_sale_status'] = !empty($this->request->post['system_sticker_sale_status']) ? 1 : 0;
+    } else {
+      $data['system_sticker_sale_status'] = isset($system_stickers['sale']) ? (int)$system_stickers['sale']['status'] : 0;
+    }
 
     if (isset($this->request->post['module_product_sticker_new_days'])) {
       $data['module_product_sticker_new_days'] = (int)$this->request->post['module_product_sticker_new_days'];
@@ -605,6 +614,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
       'text_sale_products',
       'text_yes',
       'text_no',
+      'text_days',
       'column_name',
       'column_color',
       'column_text',
