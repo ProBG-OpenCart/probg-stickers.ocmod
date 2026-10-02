@@ -91,25 +91,27 @@ class ControllerExtensionModuleProductSticker extends Controller {
       }
     }
 
-    $this->ensureSystemStickerSchema();
+    if (!$version || version_compare($version, '2.1.0', '<')) {
+      $this->ensureSystemStickerSchema();
 
-    $settings = $this->model_setting_setting->getSetting('module_product_sticker');
+      $settings = $this->model_setting_setting->getSetting('module_product_sticker');
 
-    if (!array_key_exists('module_product_sticker_new_days', $settings)) {
-      $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_new_days', 30);
+      if (!array_key_exists('module_product_sticker_new_days', $settings)) {
+        $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_new_days', 30);
+      }
+
+      if (!array_key_exists('module_product_sticker_sale_show_discount', $settings)) {
+        $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_sale_show_discount', 1);
+      }
+
+      $this->ensureSystemStickers();
+
+      $this->model_setting_setting->editSettingValue(
+        'module_product_sticker',
+        'module_product_sticker_version',
+        '2.1.0'
+      );
     }
-
-    if (!array_key_exists('module_product_sticker_sale_show_discount', $settings)) {
-      $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_sale_show_discount', 1);
-    }
-
-    $this->ensureSystemStickers();
-
-    $this->model_setting_setting->editSettingValue(
-      'module_product_sticker',
-      'module_product_sticker_version',
-      '2.1.0'
-    );
   }
 
   public function update() {
@@ -138,6 +140,9 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
     $this->load->model('extension/module/product_sticker');
     $this->load->model('setting/setting');
+
+    // Run idempotent schema/data migrations when an older installed version opens the module.
+    $this->upgrade();
 
     if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateSettings()) {
       $position = isset($this->request->post['module_product_sticker_position']) ? $this->request->post['module_product_sticker_position'] : 'top-left';
