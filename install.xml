@@ -657,6 +657,19 @@ $this->load->model('extension/module/product_sticker');
 {% endif %}
       ]]></add>
     </operation>
+
+    <operation>
+      <search><![CDATA[<div class="image">]]></search>
+      <add position="after"><![CDATA[
+{% if product.stickers %}
+  <div class="product-stickers product-stickers-{{ product.stickers[0].position }}">
+    {% for sticker in product.stickers %}
+      <span class="product-sticker" style="background:{{ sticker.color }}; color:{{ sticker.text_color }};">{{ sticker.name }}</span>
+    {% endfor %}
+  </div>
+{% endif %}
+      ]]></add>
+    </operation>
   </file>
 
   <file path="catalog/view/theme/default/template/product/category.twig">
