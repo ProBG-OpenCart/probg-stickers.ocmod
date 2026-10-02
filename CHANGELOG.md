@@ -10,7 +10,7 @@ All notable changes to ProBG Product Stickers are documented in this file.
 - automated **Sale** system sticker based on active `product_special` pricing;
 - optional calculated discount percentage in the sale sticker;
 - protected `system_key` records for automated stickers;
-- automatic sticker rendering in the default OpenCart 3 product page, product lists, and standard product modules;
+- automatic sticker rendering in the default OpenCart 3 product page, related products, product lists, and standard product modules;
 - GitHub Actions validation for PHP syntax, OCMOD XML, and repository invariants.
 
 ### Changed
