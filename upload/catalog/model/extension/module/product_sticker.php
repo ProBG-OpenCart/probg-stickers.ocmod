@@ -119,10 +119,40 @@ class ModelExtensionModuleProductSticker extends Model {
   }
 
   private function getAutomatedStickers($product_id, $language_id, $fallback_language_id, $position, $new_days, $show_discount) {
+    $definitions = $this->getSystemStickerDefinitions($language_id, $fallback_language_id);
+
+    if (!$definitions) {
+      return array();
+    }
+
+    $customer_group_id = (int)$this->config->get('config_customer_group_id');
+
+    if ($this->customer && $this->customer->isLogged()) {
+      $customer_group_id = (int)$this->customer->getGroupId();
+    }
+
+    $special_select = "NULL AS special_price";
+
+    if (isset($definitions['sale'])) {
+      $special_select = "(
+        SELECT pspecial.price
+        FROM `" . DB_PREFIX . "product_special` pspecial
+        WHERE pspecial.product_id = p.product_id
+          AND pspecial.customer_group_id = '" . $customer_group_id . "'
+          AND (pspecial.date_start = '0000-00-00' OR pspecial.date_start IS NULL OR pspecial.date_start < NOW())
+          AND (pspecial.date_end = '0000-00-00' OR pspecial.date_end IS NULL OR pspecial.date_end > NOW())
+        ORDER BY pspecial.priority ASC, pspecial.price ASC
+        LIMIT 1
+      ) AS special_price";
+    }
+
     $product_query = $this->db->query("
-      SELECT price, date_added
-      FROM `" . DB_PREFIX . "product`
-      WHERE product_id = '" . (int)$product_id . "'
+      SELECT
+        p.price,
+        p.date_added,
+        " . $special_select . "
+      FROM `" . DB_PREFIX . "product` p
+      WHERE p.product_id = '" . (int)$product_id . "'
       LIMIT 1
     ");
 
@@ -131,6 +161,50 @@ class ModelExtensionModuleProductSticker extends Model {
     }
 
     $product = $product_query->row;
+    $result = array();
+
+    if (isset($definitions['new']) && !empty($product['date_added'])) {
+      $date_added = strtotime($product['date_added']);
+      $threshold = strtotime('-' . (int)$new_days . ' days');
+
+      if ($date_added !== false && $date_added >= $threshold) {
+        $row = $definitions['new'];
+        $row['position'] = $position;
+        $result[] = $row;
+      }
+    }
+
+    if (isset($definitions['sale'])) {
+      $base_price = (float)$product['price'];
+      $special_price = $product['special_price'];
+
+      if ($special_price !== null && $base_price > 0 && (float)$special_price < $base_price) {
+        $row = $definitions['sale'];
+
+        if ($show_discount) {
+          $discount = (int)round((1 - ((float)$special_price / $base_price)) * 100);
+
+          if ($discount > 0) {
+            $row['name'] .= ' -' . $discount . '%';
+          }
+        }
+
+        $row['position'] = $position;
+        $result[] = $row;
+      }
+    }
+
+    return $result;
+  }
+
+  private function getSystemStickerDefinitions($language_id, $fallback_language_id) {
+    static $cache = array();
+
+    $cache_key = (int)$language_id . '_' . (int)$fallback_language_id;
+
+    if (isset($cache[$cache_key])) {
+      return $cache[$cache_key];
+    }
 
     $query = $this->db->query("
       SELECT
@@ -154,72 +228,13 @@ class ModelExtensionModuleProductSticker extends Model {
       ORDER BY ps.sort_order ASC, ps.product_sticker_id ASC
     ");
 
-    $result = array();
-    $special_price = null;
-    $is_new = false;
-
-    if (!empty($product['date_added'])) {
-      $date_added = strtotime($product['date_added']);
-      $threshold = strtotime('-' . (int)$new_days . ' days');
-
-      $is_new = ($date_added !== false && $date_added >= $threshold);
-    }
+    $cache[$cache_key] = array();
 
     foreach ($query->rows as $row) {
-      if ($row['system_key'] === 'new' && !$is_new) {
-        continue;
-      }
-
-      if ($row['system_key'] === 'sale') {
-        if ($special_price === null) {
-          $special_price = $this->getActiveSpecialPrice($product_id);
-        }
-
-        $base_price = (float)$product['price'];
-
-        if ($special_price === false || $base_price <= 0 || (float)$special_price >= $base_price) {
-          continue;
-        }
-
-        if ($show_discount) {
-          $discount = (int)round((1 - ((float)$special_price / $base_price)) * 100);
-
-          if ($discount > 0) {
-            $row['name'] .= ' -' . $discount . '%';
-          }
-        }
-      }
-
-      $row['position'] = $position;
-      $result[] = $row;
+      $cache[$cache_key][$row['system_key']] = $row;
     }
 
-    return $result;
-  }
-
-  private function getActiveSpecialPrice($product_id) {
-    $customer_group_id = (int)$this->config->get('config_customer_group_id');
-
-    if ($this->customer && $this->customer->isLogged()) {
-      $customer_group_id = (int)$this->customer->getGroupId();
-    }
-
-    $query = $this->db->query("
-      SELECT price
-      FROM `" . DB_PREFIX . "product_special`
-      WHERE product_id = '" . (int)$product_id . "'
-        AND customer_group_id = '" . $customer_group_id . "'
-        AND ((date_start = '0000-00-00' OR date_start < NOW()) OR date_start IS NULL)
-        AND ((date_end = '0000-00-00' OR date_end > NOW()) OR date_end IS NULL)
-      ORDER BY priority ASC, price ASC
-      LIMIT 1
-    ");
-
-    if (!$query->num_rows) {
-      return false;
-    }
-
-    return (float)$query->row['price'];
+    return $cache[$cache_key];
   }
 
   private function getFallbackLanguageId() {
