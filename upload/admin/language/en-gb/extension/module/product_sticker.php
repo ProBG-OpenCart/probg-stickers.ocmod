@@ -12,6 +12,7 @@ $_['text_enabled'] = 'Enabled';
 $_['text_disabled'] = 'Disabled';
 $_['text_yes'] = 'Yes';
 $_['text_no'] = 'No';
+$_['text_days'] = 'days';
 $_['text_system'] = 'Automated';
 $_['text_manual'] = 'Manual';
 $_['text_tab_stickers'] = 'Stickers';
