@@ -3,6 +3,7 @@ $_['heading_title'] = 'Product Stickers';
 
 $_['text_extension'] = 'Extensions';
 $_['text_success'] = 'Product sticker settings saved successfully!';
+$_['text_update_success'] = 'Module updated successfully!';
 $_['text_list'] = 'Sticker List';
 $_['text_add'] = 'Add Sticker';
 $_['text_edit'] = 'Edit Sticker';
