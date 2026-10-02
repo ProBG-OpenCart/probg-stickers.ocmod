@@ -641,4 +641,15 @@ $this->load->model('extension/module/product_sticker');
     </operation>
   </file>
 
+
+  <!-- ================= STOREFRONT: STICKER STYLES ================= -->
+  <file path="catalog/controller/common/header.php">
+    <operation>
+      <search><![CDATA[$data['styles'] = $this->document->getStyles();]]></search>
+      <add position="before"><![CDATA[
+$this->document->addStyle('catalog/view/theme/default/stylesheet/stickers.css');
+      ]]></add>
+    </operation>
+  </file>
+
 </modification>
