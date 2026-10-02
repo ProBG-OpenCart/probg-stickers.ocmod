@@ -98,10 +98,12 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
       if (!array_key_exists('module_product_sticker_new_days', $settings)) {
         $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_new_days', 30);
+        $this->config->set('module_product_sticker_new_days', 30);
       }
 
       if (!array_key_exists('module_product_sticker_sale_show_discount', $settings)) {
         $this->model_setting_setting->editSettingValue('module_product_sticker', 'module_product_sticker_sale_show_discount', 1);
+        $this->config->set('module_product_sticker_sale_show_discount', 1);
       }
 
       $this->ensureSystemStickers();
@@ -111,6 +113,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
         'module_product_sticker_version',
         '2.1.0'
       );
+      $this->config->set('module_product_sticker_version', '2.1.0');
     }
   }
 
@@ -258,6 +261,8 @@ class ControllerExtensionModuleProductSticker extends Controller {
   }
 
   protected function getList() {
+    $data = array();
+
     $this->load->model('setting/setting');
     $this->addLanguageData($data);
 
@@ -362,6 +367,8 @@ class ControllerExtensionModuleProductSticker extends Controller {
   }
 
   protected function getForm() {
+    $data = array();
+
     $this->addLanguageData($data);
 
     $data['breadcrumbs'] = array();
