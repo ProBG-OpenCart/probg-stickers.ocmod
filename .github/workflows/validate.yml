@@ -1,0 +1,68 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '7.2'
+          - '7.4'
+          - '8.1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint PHP
+        run: find upload -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Validate OCMOD XML
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse("install.xml").getroot()
+          assert root.tag == "modification"
+          assert root.findtext("code") == "probg_product_stickers_2_0"
+          assert root.findtext("version") == "2.1.0"
+          operations = root.findall(".//operation")
+          assert operations, "install.xml contains no OCMOD operations"
+          print(f"Validated {len(operations)} OCMOD operations")
+          PY
+
+      - name: Check language keys
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          paths = [
+              Path("upload/admin/language/bg-bg/extension/module/product_sticker.php"),
+              Path("upload/admin/language/en-gb/extension/module/product_sticker.php"),
+          ]
+          key_sets = []
+          for path in paths:
+              text = path.read_text(encoding="utf-8")
+              keys = re.findall(r"\$_\['([^']+)'\]", text)
+              duplicates = sorted({key for key in keys if keys.count(key) > 1})
+              assert not duplicates, f"{path}: duplicate keys: {duplicates}"
+              key_sets.append(set(keys))
+          assert key_sets[0] == key_sets[1], "BG and EN language key sets differ"
+          print(f"Validated {len(key_sets[0])} language keys")
+          PY

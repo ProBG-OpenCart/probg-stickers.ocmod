@@ -20,7 +20,9 @@ Current development version: **2.1.0**
 - optional calculated discount percentage in the sale sticker, for example `Sale -20%`;
 - automated stickers are protected system records: they cannot be deleted or edited as normal stickers and can only be enabled/disabled from the module settings;
 - active special prices are evaluated for the current customer group;
-- automatic stylesheet loading through OCMOD.
+- automatic rendering in the default OpenCart 3 product page, category/search/manufacturer/special lists, and the standard Featured/Latest/Bestseller/Special modules;
+- automatic stylesheet loading through OCMOD;
+- upgrade-safe database migration to InnoDB/utf8mb4 with mapping-table indexes.
 
 ## Installation
 
@@ -28,7 +30,7 @@ Current development version: **2.1.0**
 2. Refresh **Extensions → Modifications**.
 3. Install **Product Stickers** from **Extensions → Extensions → Modules**.
 4. Open the module settings once after upgrading from an older version so the database migration can be applied.
-5. Adapt the active theme when it does not output the provided sticker data. [readme.txt](readme.txt) contains product-card and product-page Twig examples.
+5. The default OpenCart 3 theme is integrated automatically. For custom themes, adapt the product image/card templates when they do not output the provided sticker data. [readme.txt](readme.txt) contains product-card and product-page Twig examples.
 
 ## Automated stickers
 
