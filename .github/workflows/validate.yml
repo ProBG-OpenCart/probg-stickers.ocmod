@@ -41,10 +41,29 @@ jobs:
           root = ET.parse("install.xml").getroot()
           assert root.tag == "modification"
           assert root.findtext("code") == "probg_product_stickers_2_0"
-          assert root.findtext("version") == "2.2.0"
+          assert root.findtext("version") == "2.2.1"
           operations = root.findall(".//operation")
           assert operations, "install.xml contains no OCMOD operations"
           print(f"Validated {len(operations)} OCMOD operations")
+
+          from pathlib import Path
+          xml_text = Path("install.xml").read_text(encoding="utf-8")
+          module_expectations = {
+              "catalog/controller/extension/module/bestseller.php": "$result['product_id']",
+              "catalog/controller/extension/module/featured.php": "$product_info['product_id']",
+              "catalog/controller/extension/module/latest.php": "$result['product_id']",
+              "catalog/controller/extension/module/special.php": "$result['product_id']",
+          }
+
+          for module_path, expected in module_expectations.items():
+              start = xml_text.find(f'<file path="{module_path}">')
+              assert start >= 0, f"Missing OCMOD file block: {module_path}"
+              end = xml_text.find("</file>", start)
+              assert end > start, f"Malformed OCMOD file block: {module_path}"
+              block = xml_text[start:end]
+              assert expected in block, f"{module_path}: expected {expected}"
+
+          print("Validated standard module product-id variables")
           PY
 
       - name: Check language keys
