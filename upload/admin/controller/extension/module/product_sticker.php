@@ -49,7 +49,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
       'module_product_sticker_position' => 'top-left',
       'module_product_sticker_new_days' => 30,
       'module_product_sticker_sale_show_discount' => 1,
-      'module_product_sticker_version' => '2.2.0'
+      'module_product_sticker_version' => '2.2.1'
     ));
 
     $this->ensureSystemStickerSchema();
@@ -118,14 +118,14 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $settings['module_product_sticker_position'] = $position;
       $settings['module_product_sticker_new_days'] = $new_days;
       $settings['module_product_sticker_sale_show_discount'] = $show_discount;
-      $settings['module_product_sticker_version'] = '2.2.0';
+      $settings['module_product_sticker_version'] = '2.2.1';
 
       $this->model_setting_setting->editSetting('module_product_sticker', $settings);
 
       $this->config->set('module_product_sticker_position', $position);
       $this->config->set('module_product_sticker_new_days', $new_days);
       $this->config->set('module_product_sticker_sale_show_discount', $show_discount);
-      $this->config->set('module_product_sticker_version', '2.2.0');
+      $this->config->set('module_product_sticker_version', '2.2.1');
     }
 
     if (!$version || version_compare($version, '2.2.0', '<')) {
@@ -134,6 +134,14 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
       $this->model_setting_setting->editSetting('module_product_sticker', $settings);
       $this->config->set('module_product_sticker_version', '2.2.0');
+    }
+
+    if (!$version || version_compare($version, '2.2.1', '<')) {
+      $settings = $this->model_setting_setting->getSetting('module_product_sticker');
+      $settings['module_product_sticker_version'] = '2.2.1';
+
+      $this->model_setting_setting->editSetting('module_product_sticker', $settings);
+      $this->config->set('module_product_sticker_version', '2.2.1');
     }
   }
 

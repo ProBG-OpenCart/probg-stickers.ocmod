@@ -2,6 +2,11 @@
 
 All notable changes to ProBG Product Stickers are documented in this file.
 
+## [2.2.1] - Unreleased
+
+### Fixed
+- corrected OCMOD integration for the standard OpenCart **Bestseller**, **Latest**, and **Special** modules to use `$result['product_id']` instead of the undefined/null `$product_info['product_id']`, preventing PHP "Trying to access array offset on value of type null" notices.
+
 ## [2.2.0] - 2026-10-04
 
 ### Added

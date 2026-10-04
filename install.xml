@@ -2,7 +2,7 @@
 <modification>
   <name>ProBG Product Stickers for OpenCart</name>
   <code>probg_product_stickers_2_0</code>
-  <version>2.2.0</version>
+  <version>2.2.1</version>
   <author>Veselin Totev, ProBG Web Studio</author>
   <link>https://www.probg.com</link>
 
@@ -588,7 +588,7 @@ $this->load->model('extension/module/product_sticker');
     <operation>
       <search><![CDATA[$data['products'][] = array(]]></search>
       <add position="after"><![CDATA[
-        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($result['product_id']),
       ]]></add>
     </operation>
   </file>
@@ -620,7 +620,7 @@ $this->load->model('extension/module/product_sticker');
     <operation>
       <search><![CDATA[$data['products'][] = array(]]></search>
       <add position="after"><![CDATA[
-        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($result['product_id']),
       ]]></add>
     </operation>
   </file>
@@ -636,7 +636,7 @@ $this->load->model('extension/module/product_sticker');
     <operation>
       <search><![CDATA[$data['products'][] = array(]]></search>
       <add position="after"><![CDATA[
-        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($product_info['product_id']),
+        'stickers' => $this->model_extension_module_product_sticker->getStickersByProductId($result['product_id']),
       ]]></add>
     </operation>
   </file>
