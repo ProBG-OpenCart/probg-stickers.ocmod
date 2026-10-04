@@ -65,6 +65,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
     $this->ensureSystemStickerSchema();
     $this->migrateStorageSchema();
     $this->ensureMappingIndexes();
+    $this->ensureSystemStickers();
 
     if (!$version || version_compare($version, '2.0', '<')) {
       $this->db->query("
@@ -91,8 +92,6 @@ class ControllerExtensionModuleProductSticker extends Controller {
     }
 
     if (!$version || version_compare($version, '2.1.0', '<')) {
-      $this->ensureSystemStickers();
-
       $settings = $this->model_setting_setting->getSetting('module_product_sticker');
 
       $position = isset($settings['module_product_sticker_position'])
@@ -726,11 +725,10 @@ class ControllerExtensionModuleProductSticker extends Controller {
         $name = (strpos($code, 'bg') === 0) ? $definition['bg'] : $definition['en'];
 
         $this->db->query("
-          INSERT INTO `" . DB_PREFIX . "product_sticker_description`
+          INSERT IGNORE INTO `" . DB_PREFIX . "product_sticker_description`
           SET product_sticker_id = '" . $product_sticker_id . "',
               language_id = '" . (int)$language['language_id'] . "',
               name = '" . $this->db->escape($name) . "'
-          ON DUPLICATE KEY UPDATE name = VALUES(name)
         ");
       }
     }
