@@ -6,7 +6,7 @@ Bulgarian documentation: [README_BG.md](README_BG.md)
 
 ## Version
 
-Current development version: **2.1.0**
+Current development version: **2.2.0**
 
 ## Features
 
@@ -18,7 +18,7 @@ Current development version: **2.1.0**
 - configurable number of days during which a product is considered new;
 - automated **Sale** sticker for products with an active OpenCart special price;
 - optional calculated discount percentage in the sale sticker, for example `Sale -20%`;
-- automated stickers are protected system records: they cannot be deleted or edited as normal stickers and can only be enabled/disabled from the module settings;
+- automated stickers are protected system records: they cannot be deleted or edited as normal stickers; they can be enabled/disabled and renamed per language from the module settings;
 - active special prices are evaluated for the current customer group;
 - automatic rendering in the default OpenCart 3 product page, category/search/manufacturer/special lists, and the standard Featured/Latest/Bestseller/Special modules;
 - automatic stylesheet loading through OCMOD;
@@ -36,11 +36,11 @@ Current development version: **2.1.0**
 
 ### New products
 
-Enable **New product sticker** and define how many days after `date_added` a product should be considered new.
+Enable **New product sticker**, define its name for each store language, and set how many days after `date_added` a product should be considered new.
 
 ### Sale products
 
-Enable **Sale sticker** to automatically mark products that currently have a valid OpenCart `product_special` price for the active customer group. Enable **Show discount percentage** to append the calculated reduction to the sticker text.
+Enable **Sale sticker**, define its name for each store language, and automatically mark products that currently have a valid OpenCart `product_special` price for the active customer group. Enable **Show discount percentage** to append the calculated reduction to the configured sticker name.
 
 ## Support development
 
