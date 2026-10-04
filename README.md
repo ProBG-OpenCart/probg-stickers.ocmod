@@ -18,7 +18,7 @@ Current development version: **2.2.0**
 - configurable number of days during which a product is considered new;
 - automated **Sale** sticker for products with an active OpenCart special price;
 - optional calculated discount percentage in the sale sticker, for example `Sale -20%`;
-- automated stickers are protected system records: they cannot be deleted or edited as normal stickers; they can be enabled/disabled and renamed per language from the module settings;
+- automated stickers are protected system records: they cannot be deleted or edited as normal stickers; they can be enabled/disabled, renamed per language, and have their background/text colors changed from the module settings;
 - active special prices are evaluated for the current customer group;
 - automatic rendering in the default OpenCart 3 product page, category/search/manufacturer/special lists, and the standard Featured/Latest/Bestseller/Special modules;
 - automatic stylesheet loading through OCMOD;
@@ -36,11 +36,11 @@ Current development version: **2.2.0**
 
 ### New products
 
-Enable **New product sticker**, define its name for each store language, and set how many days after `date_added` a product should be considered new.
+Enable **New product sticker**, define its name for each store language, choose its background and text colors, and set how many days after `date_added` a product should be considered new.
 
 ### Sale products
 
-Enable **Sale sticker**, define its name for each store language, and automatically mark products that currently have a valid OpenCart `product_special` price for the active customer group. Enable **Show discount percentage** to append the calculated reduction to the configured sticker name.
+Enable **Sale sticker**, define its name for each store language, choose its background and text colors, and automatically mark products that currently have a valid OpenCart `product_special` price for the active customer group. Enable **Show discount percentage** to append the calculated reduction to the configured sticker name.
 
 ## Support development
 
