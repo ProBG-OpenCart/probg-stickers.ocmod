@@ -717,7 +717,6 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $languages = $this->db->query("
         SELECT language_id, code
         FROM `" . DB_PREFIX . "language`
-        WHERE status = '1'
       ");
 
       foreach ($languages->rows as $language) {
