@@ -52,17 +52,27 @@ jobs:
           python3 - <<'PY'
           import re
           from pathlib import Path
-          paths = [
-              Path("upload/admin/language/bg-bg/extension/module/product_sticker.php"),
-              Path("upload/admin/language/en-gb/extension/module/product_sticker.php"),
+          pairs = [
+              (
+                  Path("upload/admin/language/bg-bg/extension/module/product_sticker.php"),
+                  Path("upload/admin/language/en-gb/extension/module/product_sticker.php"),
+              ),
+              (
+                  Path("upload/admin/language/bg-bg/extension/module/product_sticker_catalog.php"),
+                  Path("upload/admin/language/en-gb/extension/module/product_sticker_catalog.php"),
+              ),
           ]
-          key_sets = []
-          for path in paths:
-              text = path.read_text(encoding="utf-8")
-              keys = re.findall(r"\$_\['([^']+)'\]", text)
-              duplicates = sorted({key for key in keys if keys.count(key) > 1})
-              assert not duplicates, f"{path}: duplicate keys: {duplicates}"
-              key_sets.append(set(keys))
-          assert key_sets[0] == key_sets[1], "BG and EN language key sets differ"
-          print(f"Validated {len(key_sets[0])} language keys")
+
+          for bg_path, en_path in pairs:
+              key_sets = []
+
+              for path in (bg_path, en_path):
+                  text = path.read_text(encoding="utf-8")
+                  keys = re.findall(r"\$_\['([^']+)'\]", text)
+                  duplicates = sorted({key for key in keys if keys.count(key) > 1})
+                  assert not duplicates, f"{path}: duplicate keys: {duplicates}"
+                  key_sets.append(set(keys))
+
+              assert key_sets[0] == key_sets[1], f"BG and EN language key sets differ: {bg_path.name}"
+              print(f"Validated {len(key_sets[0])} language keys in {bg_path.name}")
           PY
