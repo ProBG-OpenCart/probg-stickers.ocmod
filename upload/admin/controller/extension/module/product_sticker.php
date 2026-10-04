@@ -211,11 +211,22 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $this->model_extension_module_product_sticker->setSystemStickerStatus('new', $new_status);
       $this->model_extension_module_product_sticker->setSystemStickerStatus('sale', $sale_status);
 
+      $system_styles = isset($this->request->post['system_sticker_style']) && is_array($this->request->post['system_sticker_style'])
+        ? $this->request->post['system_sticker_style']
+        : array();
+
       $system_descriptions = isset($this->request->post['system_sticker_description']) && is_array($this->request->post['system_sticker_description'])
         ? $this->request->post['system_sticker_description']
         : array();
 
       foreach (array('new', 'sale') as $system_key) {
+        if (isset($system_styles[$system_key]) && is_array($system_styles[$system_key])) {
+          $color = isset($system_styles[$system_key]['color']) ? trim($system_styles[$system_key]['color']) : '';
+          $text_color = isset($system_styles[$system_key]['text_color']) ? trim($system_styles[$system_key]['text_color']) : '';
+
+          $this->model_extension_module_product_sticker->setSystemStickerAppearance($system_key, $color, $text_color);
+        }
+
         if (isset($system_descriptions[$system_key]) && is_array($system_descriptions[$system_key])) {
           $this->model_extension_module_product_sticker->saveSystemStickerDescriptions($system_key, $system_descriptions[$system_key]);
         }
@@ -381,6 +392,21 @@ class ControllerExtensionModuleProductSticker extends Controller {
       );
     }
 
+    if (isset($this->request->post['system_sticker_style']) && is_array($this->request->post['system_sticker_style'])) {
+      $data['system_sticker_style'] = $this->request->post['system_sticker_style'];
+    } else {
+      $data['system_sticker_style'] = array(
+        'new' => array(
+          'color' => isset($system_stickers['new']['color']) ? $system_stickers['new']['color'] : '#198754',
+          'text_color' => isset($system_stickers['new']['text_color']) ? $system_stickers['new']['text_color'] : '#ffffff'
+        ),
+        'sale' => array(
+          'color' => isset($system_stickers['sale']['color']) ? $system_stickers['sale']['color'] : '#dc3545',
+          'text_color' => isset($system_stickers['sale']['text_color']) ? $system_stickers['sale']['text_color'] : '#ffffff'
+        )
+      );
+    }
+
     if (isset($this->request->post['system_sticker_new_status'])) {
       $data['system_sticker_new_status'] = !empty($this->request->post['system_sticker_new_status']) ? 1 : 0;
     } else {
@@ -417,6 +443,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
     );
 
     $data['error_system_sticker_name'] = isset($this->error['system_sticker_name']) ? $this->error['system_sticker_name'] : array();
+    $data['error_system_sticker_color'] = isset($this->error['system_sticker_color']) ? $this->error['system_sticker_color'] : array();
 
     if (isset($this->session->data['warning'])) {
       $data['error_warning'] = $this->session->data['warning'];
@@ -562,6 +589,10 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $this->error['warning'] = $this->language->get('error_new_days');
     }
 
+    $styles = isset($this->request->post['system_sticker_style']) && is_array($this->request->post['system_sticker_style'])
+      ? $this->request->post['system_sticker_style']
+      : array();
+
     $descriptions = isset($this->request->post['system_sticker_description']) && is_array($this->request->post['system_sticker_description'])
       ? $this->request->post['system_sticker_description']
       : array();
@@ -569,6 +600,14 @@ class ControllerExtensionModuleProductSticker extends Controller {
     $languages = $this->model_localisation_language->getLanguages();
 
     foreach (array('new', 'sale') as $system_key) {
+      foreach (array('color', 'text_color') as $field) {
+        $color = isset($styles[$system_key][$field]) ? trim($styles[$system_key][$field]) : '';
+
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+          $this->error['system_sticker_color'][$system_key][$field] = $this->language->get('error_system_sticker_color');
+        }
+      }
+
       foreach ($languages as $language) {
         $language_id = (int)$language['language_id'];
         $name = isset($descriptions[$system_key][$language_id]['name'])
