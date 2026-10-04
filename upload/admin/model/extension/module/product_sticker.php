@@ -236,6 +236,8 @@ class ModelExtensionModuleProductSticker extends Model {
 
     if ($assignable_only && $has_system_key) {
       $sql .= " WHERE ps.system_key IS NULL OR ps.system_key = ''";
+    } elseif ($has_system_key) {
+      $sql .= " WHERE ps.system_key IS NULL OR ps.system_key = '' OR ps.system_key IN ('new', 'sale')";
     }
 
     if ($has_system_key) {
