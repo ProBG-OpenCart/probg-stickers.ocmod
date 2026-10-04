@@ -8,7 +8,7 @@ All notable changes to ProBG Product Stickers are documented in this file.
 - multilingual renaming of the protected automated **New** and **Sale** stickers from module settings.
 
 ### Changed
-- automated sticker names are validated per active store language and stored in `product_sticker_description` without weakening system-record delete/edit protection.
+- automated sticker names are validated per configured store language and stored in `product_sticker_description` without weakening system-record delete/edit protection; missing language rows receive defaults without overwriting renamed values.
 
 ## [2.1.0] - 2026-10-02
 
