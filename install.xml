@@ -13,7 +13,7 @@
     <operation>
       <search><![CDATA[protected function getForm() {]]></search>
       <add position="after"><![CDATA[
-$this->load->language('extension/module/product_sticker');
+$this->load->language('extension/module/product_sticker_catalog');
 $this->load->model('extension/module/product_sticker');
 
 $data['tab_stickers'] = $this->language->get('tab_stickers');
@@ -35,7 +35,7 @@ if (isset($this->request->post['category_sticker'])) {
     <operation>
       <search><![CDATA[protected function getList() {]]></search>
       <add position="after"><![CDATA[
-$this->load->language('extension/module/product_sticker');
+$this->load->language('extension/module/product_sticker_catalog');
 $this->load->model('extension/module/product_sticker');
 $data['user_token'] = $this->session->data['user_token'];
 
@@ -267,7 +267,7 @@ $('#button-filter-sticker').on('click', function() {
     <operation>
       <search><![CDATA[protected function getForm() {]]></search>
       <add position="after"><![CDATA[
-$this->load->language('extension/module/product_sticker');
+$this->load->language('extension/module/product_sticker_catalog');
 $this->load->model('extension/module/product_sticker');
 
 $data['tab_stickers'] = $this->language->get('tab_stickers');
@@ -289,7 +289,7 @@ if (isset($this->request->post['product_sticker'])) {
     <operation>
       <search><![CDATA[protected function getList() {]]></search>
       <add position="after"><![CDATA[
-$this->load->language('extension/module/product_sticker');
+$this->load->language('extension/module/product_sticker_catalog');
 $this->load->model('extension/module/product_sticker');
 
 $data['text_filter_sticker'] = $this->language->get('text_filter_sticker');
