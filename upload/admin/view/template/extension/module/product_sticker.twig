@@ -189,6 +189,34 @@
                   </div>
                 </div>
 
+                <div class="form-group required">
+                  <label class="col-sm-3 control-label" for="input-new-color">{{ entry_color }}</label>
+                  <div class="col-sm-3">
+                    <input type="color"
+                           name="system_sticker_style[new][color]"
+                           value="{{ system_sticker_style['new']['color'] }}"
+                           id="input-new-color"
+                           class="form-control" />
+                    {% if error_system_sticker_color['new']['color'] %}
+                      <div class="text-danger">{{ error_system_sticker_color['new']['color'] }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="form-group required">
+                  <label class="col-sm-3 control-label" for="input-new-text-color">{{ entry_text }}</label>
+                  <div class="col-sm-3">
+                    <input type="color"
+                           name="system_sticker_style[new][text_color]"
+                           value="{{ system_sticker_style['new']['text_color'] }}"
+                           id="input-new-text-color"
+                           class="form-control" />
+                    {% if error_system_sticker_color['new']['text_color'] %}
+                      <div class="text-danger">{{ error_system_sticker_color['new']['text_color'] }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+
                 <div class="form-group">
                   <label class="col-sm-3 control-label" for="input-new-days">
                     <span data-toggle="tooltip" title="{{ help_new_days }}">{{ entry_new_days }}</span>
@@ -231,6 +259,34 @@
                         <div class="text-danger">{{ error_system_sticker_name['sale'][language.language_id] }}</div>
                       {% endif %}
                     {% endfor %}
+                  </div>
+                </div>
+
+                <div class="form-group required">
+                  <label class="col-sm-3 control-label" for="input-sale-color">{{ entry_color }}</label>
+                  <div class="col-sm-3">
+                    <input type="color"
+                           name="system_sticker_style[sale][color]"
+                           value="{{ system_sticker_style['sale']['color'] }}"
+                           id="input-sale-color"
+                           class="form-control" />
+                    {% if error_system_sticker_color['sale']['color'] %}
+                      <div class="text-danger">{{ error_system_sticker_color['sale']['color'] }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="form-group required">
+                  <label class="col-sm-3 control-label" for="input-sale-text-color">{{ entry_text }}</label>
+                  <div class="col-sm-3">
+                    <input type="color"
+                           name="system_sticker_style[sale][text_color]"
+                           value="{{ system_sticker_style['sale']['text_color'] }}"
+                           id="input-sale-text-color"
+                           class="form-control" />
+                    {% if error_system_sticker_color['sale']['text_color'] %}
+                      <div class="text-danger">{{ error_system_sticker_color['sale']['text_color'] }}</div>
+                    {% endif %}
                   </div>
                 </div>
 
