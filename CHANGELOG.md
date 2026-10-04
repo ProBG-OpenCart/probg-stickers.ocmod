@@ -2,7 +2,7 @@
 
 All notable changes to ProBG Product Stickers are documented in this file.
 
-## [2.2.0] - Unreleased
+## [2.2.0] - 2026-10-04
 
 ### Added
 - multilingual renaming of the protected automated **New** and **Sale** stickers from module settings;
