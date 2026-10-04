@@ -41,7 +41,7 @@ jobs:
           root = ET.parse("install.xml").getroot()
           assert root.tag == "modification"
           assert root.findtext("code") == "probg_product_stickers_2_0"
-          assert root.findtext("version") == "2.1.0"
+          assert root.findtext("version") == "2.2.0"
           operations = root.findall(".//operation")
           assert operations, "install.xml contains no OCMOD operations"
           print(f"Validated {len(operations)} OCMOD operations")

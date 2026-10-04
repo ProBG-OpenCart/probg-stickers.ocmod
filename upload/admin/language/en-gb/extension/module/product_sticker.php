@@ -45,12 +45,14 @@ $_['entry_color'] = 'Sticker color';
 $_['entry_text'] = 'Text color';
 $_['entry_status'] = 'Status';
 $_['entry_sticker_position'] = 'Sticker position';
+$_['entry_system_sticker_name'] = 'Sticker name';
 $_['entry_new_status'] = 'New product sticker';
 $_['entry_new_days'] = 'Product is new for';
 $_['entry_sale_status'] = 'Sale sticker';
 $_['entry_sale_show_discount'] = 'Show discount percentage';
 
 $_['help_product_stickers'] = 'Selected manual stickers will be displayed for this product. Automated stickers are controlled from the module settings.';
+$_['help_system_sticker_name'] = 'The name is language-specific and is used on the storefront for the automated sticker.';
 $_['help_new_days'] = 'Number of days after the product creation date during which it is considered new.';
 $_['help_sale_show_discount'] = 'When enabled, the calculated discount percentage is appended to the sale sticker text.';
 
@@ -64,3 +66,4 @@ $_['error_position'] = 'Invalid sticker position selected.';
 $_['error_new_days'] = 'New product days must be between 1 and 3650.';
 $_['error_system_sticker_delete'] = 'Automated stickers are system records and cannot be deleted.';
 $_['error_system_sticker_edit'] = 'Automated stickers can only be managed from the module settings.';
+$_['error_system_sticker_name'] = 'Automated sticker name must be between 3 and 64 characters for every language.';

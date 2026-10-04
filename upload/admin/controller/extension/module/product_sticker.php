@@ -49,7 +49,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
       'module_product_sticker_position' => 'top-left',
       'module_product_sticker_new_days' => 30,
       'module_product_sticker_sale_show_discount' => 1,
-      'module_product_sticker_version' => '2.1.0'
+      'module_product_sticker_version' => '2.2.0'
     ));
 
     $this->ensureSystemStickerSchema();
@@ -65,6 +65,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
     $this->ensureSystemStickerSchema();
     $this->migrateStorageSchema();
     $this->ensureMappingIndexes();
+    $this->ensureSystemStickers();
 
     if (!$version || version_compare($version, '2.0', '<')) {
       $this->db->query("
@@ -91,8 +92,6 @@ class ControllerExtensionModuleProductSticker extends Controller {
     }
 
     if (!$version || version_compare($version, '2.1.0', '<')) {
-      $this->ensureSystemStickers();
-
       $settings = $this->model_setting_setting->getSetting('module_product_sticker');
 
       $position = isset($settings['module_product_sticker_position'])
@@ -118,14 +117,22 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $settings['module_product_sticker_position'] = $position;
       $settings['module_product_sticker_new_days'] = $new_days;
       $settings['module_product_sticker_sale_show_discount'] = $show_discount;
-      $settings['module_product_sticker_version'] = '2.1.0';
+      $settings['module_product_sticker_version'] = '2.2.0';
 
       $this->model_setting_setting->editSetting('module_product_sticker', $settings);
 
       $this->config->set('module_product_sticker_position', $position);
       $this->config->set('module_product_sticker_new_days', $new_days);
       $this->config->set('module_product_sticker_sale_show_discount', $show_discount);
-      $this->config->set('module_product_sticker_version', '2.1.0');
+      $this->config->set('module_product_sticker_version', '2.2.0');
+    }
+
+    if (!$version || version_compare($version, '2.2.0', '<')) {
+      $settings = $this->model_setting_setting->getSetting('module_product_sticker');
+      $settings['module_product_sticker_version'] = '2.2.0';
+
+      $this->model_setting_setting->editSetting('module_product_sticker', $settings);
+      $this->config->set('module_product_sticker_version', '2.2.0');
     }
   }
 
@@ -167,6 +174,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
     $this->load->model('extension/module/product_sticker');
     $this->load->model('setting/setting');
+    $this->load->model('localisation/language');
 
     // Run idempotent schema/data migrations when an older installed version opens the module.
     $this->upgrade();
@@ -190,17 +198,27 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $settings['module_product_sticker_position'] = $position;
       $settings['module_product_sticker_new_days'] = $new_days;
       $settings['module_product_sticker_sale_show_discount'] = $show_discount;
-      $settings['module_product_sticker_version'] = '2.1.0';
+      $settings['module_product_sticker_version'] = '2.2.0';
 
       $this->model_setting_setting->editSetting('module_product_sticker', $settings);
 
       $this->config->set('module_product_sticker_position', $position);
       $this->config->set('module_product_sticker_new_days', $new_days);
       $this->config->set('module_product_sticker_sale_show_discount', $show_discount);
-      $this->config->set('module_product_sticker_version', '2.1.0');
+      $this->config->set('module_product_sticker_version', '2.2.0');
 
       $this->model_extension_module_product_sticker->setSystemStickerStatus('new', $new_status);
       $this->model_extension_module_product_sticker->setSystemStickerStatus('sale', $sale_status);
+
+      $system_descriptions = isset($this->request->post['system_sticker_description']) && is_array($this->request->post['system_sticker_description'])
+        ? $this->request->post['system_sticker_description']
+        : array();
+
+      foreach (array('new', 'sale') as $system_key) {
+        if (isset($system_descriptions[$system_key]) && is_array($system_descriptions[$system_key])) {
+          $this->model_extension_module_product_sticker->saveSystemStickerDescriptions($system_key, $system_descriptions[$system_key]);
+        }
+      }
 
       $this->session->data['success'] = $this->language->get('text_success');
 
@@ -297,7 +315,10 @@ class ControllerExtensionModuleProductSticker extends Controller {
     $data = array();
 
     $this->load->model('setting/setting');
+    $this->load->model('localisation/language');
     $this->addLanguageData($data);
+
+    $data['languages'] = $this->model_localisation_language->getLanguages();
 
     $data['breadcrumbs'] = array();
 
@@ -350,6 +371,15 @@ class ControllerExtensionModuleProductSticker extends Controller {
 
     $system_stickers = $this->model_extension_module_product_sticker->getSystemStickers();
 
+    if (isset($this->request->post['system_sticker_description']) && is_array($this->request->post['system_sticker_description'])) {
+      $data['system_sticker_description'] = $this->request->post['system_sticker_description'];
+    } else {
+      $data['system_sticker_description'] = array(
+        'new' => $this->model_extension_module_product_sticker->getSystemStickerDescriptions('new'),
+        'sale' => $this->model_extension_module_product_sticker->getSystemStickerDescriptions('sale')
+      );
+    }
+
     if (isset($this->request->post['system_sticker_new_status'])) {
       $data['system_sticker_new_status'] = !empty($this->request->post['system_sticker_new_status']) ? 1 : 0;
     } else {
@@ -384,6 +414,8 @@ class ControllerExtensionModuleProductSticker extends Controller {
       'bottom-right' => $this->language->get('text_bottom_right'),
       'bottom' => $this->language->get('text_bottom')
     );
+
+    $data['error_system_sticker_name'] = isset($this->error['system_sticker_name']) ? $this->error['system_sticker_name'] : array();
 
     if (isset($this->session->data['warning'])) {
       $data['error_warning'] = $this->session->data['warning'];
@@ -529,6 +561,25 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $this->error['warning'] = $this->language->get('error_new_days');
     }
 
+    $descriptions = isset($this->request->post['system_sticker_description']) && is_array($this->request->post['system_sticker_description'])
+      ? $this->request->post['system_sticker_description']
+      : array();
+
+    $languages = $this->model_localisation_language->getLanguages();
+
+    foreach (array('new', 'sale') as $system_key) {
+      foreach ($languages as $language) {
+        $language_id = (int)$language['language_id'];
+        $name = isset($descriptions[$system_key][$language_id]['name'])
+          ? trim($descriptions[$system_key][$language_id]['name'])
+          : '';
+
+        if ((utf8_strlen($name) < 3) || (utf8_strlen($name) > 64)) {
+          $this->error['system_sticker_name'][$system_key][$language_id] = $this->language->get('error_system_sticker_name');
+        }
+      }
+    }
+
     return !$this->error;
   }
 
@@ -666,7 +717,6 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $languages = $this->db->query("
         SELECT language_id, code
         FROM `" . DB_PREFIX . "language`
-        WHERE status = '1'
       ");
 
       foreach ($languages->rows as $language) {
@@ -674,11 +724,10 @@ class ControllerExtensionModuleProductSticker extends Controller {
         $name = (strpos($code, 'bg') === 0) ? $definition['bg'] : $definition['en'];
 
         $this->db->query("
-          INSERT INTO `" . DB_PREFIX . "product_sticker_description`
+          INSERT IGNORE INTO `" . DB_PREFIX . "product_sticker_description`
           SET product_sticker_id = '" . $product_sticker_id . "',
               language_id = '" . (int)$language['language_id'] . "',
               name = '" . $this->db->escape($name) . "'
-          ON DUPLICATE KEY UPDATE name = VALUES(name)
         ");
       }
     }
@@ -718,10 +767,12 @@ class ControllerExtensionModuleProductSticker extends Controller {
       'entry_text',
       'entry_status',
       'entry_sticker_position',
+      'entry_system_sticker_name',
       'entry_new_status',
       'entry_new_days',
       'entry_sale_status',
       'entry_sale_show_discount',
+      'help_system_sticker_name',
       'help_new_days',
       'help_sale_show_discount',
       'button_save',

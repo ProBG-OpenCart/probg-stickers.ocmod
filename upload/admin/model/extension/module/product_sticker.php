@@ -145,6 +145,79 @@ class ModelExtensionModuleProductSticker extends Model {
     return true;
   }
 
+  public function getSystemStickerDescriptions($system_key) {
+    if (!$this->hasSystemKeyColumn()) {
+      return array();
+    }
+
+    $allowed = array('new', 'sale');
+
+    if (!in_array($system_key, $allowed, true)) {
+      return array();
+    }
+
+    $query = $this->db->query("
+      SELECT psd.language_id, psd.name
+      FROM `" . DB_PREFIX . "product_sticker` ps
+      INNER JOIN `" . DB_PREFIX . "product_sticker_description` psd
+        ON ps.product_sticker_id = psd.product_sticker_id
+      WHERE ps.system_key = '" . $this->db->escape($system_key) . "'
+    ");
+
+    $data = array();
+
+    foreach ($query->rows as $row) {
+      $data[(int)$row['language_id']] = array(
+        'name' => $row['name']
+      );
+    }
+
+    return $data;
+  }
+
+  public function saveSystemStickerDescriptions($system_key, $descriptions) {
+    if (!$this->hasSystemKeyColumn() || !is_array($descriptions)) {
+      return false;
+    }
+
+    $allowed = array('new', 'sale');
+
+    if (!in_array($system_key, $allowed, true)) {
+      return false;
+    }
+
+    $query = $this->db->query("
+      SELECT product_sticker_id
+      FROM `" . DB_PREFIX . "product_sticker`
+      WHERE system_key = '" . $this->db->escape($system_key) . "'
+      LIMIT 1
+    ");
+
+    if (!$query->num_rows) {
+      return false;
+    }
+
+    $product_sticker_id = (int)$query->row['product_sticker_id'];
+
+    foreach ($descriptions as $language_id => $value) {
+      $name = isset($value['name']) ? trim($value['name']) : '';
+
+      if ($name === '') {
+        continue;
+      }
+
+      $this->db->query("
+        INSERT INTO `" . DB_PREFIX . "product_sticker_description`
+        SET product_sticker_id = '" . $product_sticker_id . "',
+            language_id = '" . (int)$language_id . "',
+            name = '" . $this->db->escape($name) . "'
+        ON DUPLICATE KEY UPDATE name = VALUES(name)
+      ");
+    }
+
+    return true;
+  }
+
   private function getStickerList($assignable_only) {
     $has_system_key = $this->hasSystemKeyColumn();
     $admin_language_id = (int)$this->config->get('config_admin_language_id');
