@@ -145,6 +145,31 @@ class ModelExtensionModuleProductSticker extends Model {
     return true;
   }
 
+  public function setSystemStickerAppearance($system_key, $color, $text_color) {
+    if (!$this->hasSystemKeyColumn()) {
+      return false;
+    }
+
+    $allowed = array('new', 'sale');
+
+    if (!in_array($system_key, $allowed, true)) {
+      return false;
+    }
+
+    if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color) || !preg_match('/^#[0-9a-fA-F]{6}$/', $text_color)) {
+      return false;
+    }
+
+    $this->db->query("
+      UPDATE `" . DB_PREFIX . "product_sticker`
+      SET color = '" . $this->db->escape(strtolower($color)) . "',
+          text_color = '" . $this->db->escape(strtolower($text_color)) . "'
+      WHERE system_key = '" . $this->db->escape($system_key) . "'
+    ");
+
+    return true;
+  }
+
   public function getSystemStickerDescriptions($system_key) {
     if (!$this->hasSystemKeyColumn()) {
       return array();
@@ -236,6 +261,8 @@ class ModelExtensionModuleProductSticker extends Model {
 
     if ($assignable_only && $has_system_key) {
       $sql .= " WHERE ps.system_key IS NULL OR ps.system_key = ''";
+    } elseif ($has_system_key) {
+      $sql .= " WHERE ps.system_key IS NULL OR ps.system_key = '' OR ps.system_key IN ('new', 'sale')";
     }
 
     if ($has_system_key) {

@@ -67,3 +67,4 @@ $_['error_new_days'] = 'New product days must be between 1 and 3650.';
 $_['error_system_sticker_delete'] = 'Automated stickers are system records and cannot be deleted.';
 $_['error_system_sticker_edit'] = 'Automated stickers can only be managed from the module settings.';
 $_['error_system_sticker_name'] = 'Automated sticker name must be between 3 and 64 characters for every language.';
+$_['error_system_sticker_color'] = 'Color must be a valid HEX value in #RRGGBB format.';

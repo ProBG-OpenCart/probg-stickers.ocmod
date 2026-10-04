@@ -66,6 +66,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
     $this->migrateStorageSchema();
     $this->ensureMappingIndexes();
     $this->ensureSystemStickers();
+    $this->normalizeLegacySystemStickers();
 
     if (!$version || version_compare($version, '2.0', '<')) {
       $this->db->query("
@@ -210,11 +211,22 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $this->model_extension_module_product_sticker->setSystemStickerStatus('new', $new_status);
       $this->model_extension_module_product_sticker->setSystemStickerStatus('sale', $sale_status);
 
+      $system_styles = isset($this->request->post['system_sticker_style']) && is_array($this->request->post['system_sticker_style'])
+        ? $this->request->post['system_sticker_style']
+        : array();
+
       $system_descriptions = isset($this->request->post['system_sticker_description']) && is_array($this->request->post['system_sticker_description'])
         ? $this->request->post['system_sticker_description']
         : array();
 
       foreach (array('new', 'sale') as $system_key) {
+        if (isset($system_styles[$system_key]) && is_array($system_styles[$system_key])) {
+          $color = isset($system_styles[$system_key]['color']) ? trim($system_styles[$system_key]['color']) : '';
+          $text_color = isset($system_styles[$system_key]['text_color']) ? trim($system_styles[$system_key]['text_color']) : '';
+
+          $this->model_extension_module_product_sticker->setSystemStickerAppearance($system_key, $color, $text_color);
+        }
+
         if (isset($system_descriptions[$system_key]) && is_array($system_descriptions[$system_key])) {
           $this->model_extension_module_product_sticker->saveSystemStickerDescriptions($system_key, $system_descriptions[$system_key]);
         }
@@ -380,6 +392,21 @@ class ControllerExtensionModuleProductSticker extends Controller {
       );
     }
 
+    if (isset($this->request->post['system_sticker_style']) && is_array($this->request->post['system_sticker_style'])) {
+      $data['system_sticker_style'] = $this->request->post['system_sticker_style'];
+    } else {
+      $data['system_sticker_style'] = array(
+        'new' => array(
+          'color' => isset($system_stickers['new']['color']) ? $system_stickers['new']['color'] : '#198754',
+          'text_color' => isset($system_stickers['new']['text_color']) ? $system_stickers['new']['text_color'] : '#ffffff'
+        ),
+        'sale' => array(
+          'color' => isset($system_stickers['sale']['color']) ? $system_stickers['sale']['color'] : '#dc3545',
+          'text_color' => isset($system_stickers['sale']['text_color']) ? $system_stickers['sale']['text_color'] : '#ffffff'
+        )
+      );
+    }
+
     if (isset($this->request->post['system_sticker_new_status'])) {
       $data['system_sticker_new_status'] = !empty($this->request->post['system_sticker_new_status']) ? 1 : 0;
     } else {
@@ -416,6 +443,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
     );
 
     $data['error_system_sticker_name'] = isset($this->error['system_sticker_name']) ? $this->error['system_sticker_name'] : array();
+    $data['error_system_sticker_color'] = isset($this->error['system_sticker_color']) ? $this->error['system_sticker_color'] : array();
 
     if (isset($this->session->data['warning'])) {
       $data['error_warning'] = $this->session->data['warning'];
@@ -561,6 +589,10 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $this->error['warning'] = $this->language->get('error_new_days');
     }
 
+    $styles = isset($this->request->post['system_sticker_style']) && is_array($this->request->post['system_sticker_style'])
+      ? $this->request->post['system_sticker_style']
+      : array();
+
     $descriptions = isset($this->request->post['system_sticker_description']) && is_array($this->request->post['system_sticker_description'])
       ? $this->request->post['system_sticker_description']
       : array();
@@ -568,6 +600,14 @@ class ControllerExtensionModuleProductSticker extends Controller {
     $languages = $this->model_localisation_language->getLanguages();
 
     foreach (array('new', 'sale') as $system_key) {
+      foreach (array('color', 'text_color') as $field) {
+        $color = isset($styles[$system_key][$field]) ? trim($styles[$system_key][$field]) : '';
+
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+          $this->error['system_sticker_color'][$system_key][$field] = $this->language->get('error_system_sticker_color');
+        }
+      }
+
       foreach ($languages as $language) {
         $language_id = (int)$language['language_id'];
         $name = isset($descriptions[$system_key][$language_id]['name'])
@@ -731,6 +771,220 @@ class ControllerExtensionModuleProductSticker extends Controller {
         ");
       }
     }
+  }
+
+  private function normalizeLegacySystemStickers() {
+    $legacy = $this->db->query("
+      SELECT product_sticker_id, system_key, color, text_color, sort_order, status
+      FROM `" . DB_PREFIX . "product_sticker`
+      WHERE system_key IS NOT NULL
+        AND system_key != ''
+        AND system_key NOT IN ('new', 'sale')
+      ORDER BY product_sticker_id ASC
+    ");
+
+    foreach ($legacy->rows as $legacy_sticker) {
+      $target_key = $this->detectCanonicalSystemKey($legacy_sticker);
+
+      if ($target_key === '') {
+        continue;
+      }
+
+      $target = $this->db->query("
+        SELECT product_sticker_id, color, text_color, sort_order, status
+        FROM `" . DB_PREFIX . "product_sticker`
+        WHERE system_key = '" . $this->db->escape($target_key) . "'
+        LIMIT 1
+      ");
+
+      if (!$target->num_rows) {
+        continue;
+      }
+
+      $legacy_id = (int)$legacy_sticker['product_sticker_id'];
+      $target_id = (int)$target->row['product_sticker_id'];
+
+      if ($legacy_id === $target_id) {
+        continue;
+      }
+
+      $defaults = $this->getSystemStickerDefaults($target_key);
+
+      if ($defaults) {
+        $updates = array();
+
+        if (strtolower($target->row['color']) === strtolower($defaults['color'])
+          && strtolower($legacy_sticker['color']) !== strtolower($defaults['color'])) {
+          $updates[] = "color = '" . $this->db->escape($legacy_sticker['color']) . "'";
+        }
+
+        if (strtolower($target->row['text_color']) === strtolower($defaults['text_color'])
+          && strtolower($legacy_sticker['text_color']) !== strtolower($defaults['text_color'])) {
+          $updates[] = "text_color = '" . $this->db->escape($legacy_sticker['text_color']) . "'";
+        }
+
+        if ($updates) {
+          $this->db->query("
+            UPDATE `" . DB_PREFIX . "product_sticker`
+            SET " . implode(', ', $updates) . "
+            WHERE product_sticker_id = '" . $target_id . "'
+          ");
+        }
+      }
+
+      $this->mergeLegacySystemStickerDescriptions($legacy_id, $target_id, $target_key);
+
+      $this->db->query("
+        INSERT IGNORE INTO `" . DB_PREFIX . "product_to_sticker` (product_id, product_sticker_id)
+        SELECT product_id, '" . $target_id . "'
+        FROM `" . DB_PREFIX . "product_to_sticker`
+        WHERE product_sticker_id = '" . $legacy_id . "'
+      ");
+
+      $this->db->query("
+        INSERT IGNORE INTO `" . DB_PREFIX . "category_to_sticker` (category_id, product_sticker_id)
+        SELECT category_id, '" . $target_id . "'
+        FROM `" . DB_PREFIX . "category_to_sticker`
+        WHERE product_sticker_id = '" . $legacy_id . "'
+      ");
+
+      $this->db->query("DELETE FROM `" . DB_PREFIX . "product_to_sticker` WHERE product_sticker_id = '" . $legacy_id . "'");
+      $this->db->query("DELETE FROM `" . DB_PREFIX . "category_to_sticker` WHERE product_sticker_id = '" . $legacy_id . "'");
+      $this->db->query("DELETE FROM `" . DB_PREFIX . "product_sticker_description` WHERE product_sticker_id = '" . $legacy_id . "'");
+      $this->db->query("DELETE FROM `" . DB_PREFIX . "product_sticker` WHERE product_sticker_id = '" . $legacy_id . "'");
+    }
+  }
+
+  private function detectCanonicalSystemKey($legacy_sticker) {
+    $system_key = strtolower(trim(isset($legacy_sticker['system_key']) ? $legacy_sticker['system_key'] : ''));
+    $normalized_key = str_replace(array('-', ' '), '_', $system_key);
+
+    $new_keys = array(
+      'new_product',
+      'new_products',
+      'product_new',
+      'newproduct',
+      'new_sticker',
+      'new_product_sticker'
+    );
+
+    $sale_keys = array(
+      'promo',
+      'promotion',
+      'promotional',
+      'special',
+      'special_price',
+      'sale_product',
+      'sale_products',
+      'product_sale',
+      'sale_sticker',
+      'promotion_sticker',
+      'discount'
+    );
+
+    if (in_array($normalized_key, $new_keys, true)) {
+      return 'new';
+    }
+
+    if (in_array($normalized_key, $sale_keys, true)) {
+      return 'sale';
+    }
+
+    $names = $this->db->query("
+      SELECT LOWER(TRIM(name)) AS name
+      FROM `" . DB_PREFIX . "product_sticker_description`
+      WHERE product_sticker_id = '" . (int)$legacy_sticker['product_sticker_id'] . "'
+    ");
+
+    $new_names = array('нов', 'нов продукт', 'new', 'new product');
+    $sale_names = array('промо', 'промоция', 'promo', 'promotion', 'sale');
+
+    foreach ($names->rows as $row) {
+      $name = isset($row['name']) ? trim($row['name']) : '';
+
+      if (in_array($name, $new_names, true)) {
+        return 'new';
+      }
+
+      if (in_array($name, $sale_names, true)) {
+        return 'sale';
+      }
+    }
+
+    if ((int)$legacy_sticker['sort_order'] === 0) {
+      return 'new';
+    }
+
+    if ((int)$legacy_sticker['sort_order'] === 1) {
+      return 'sale';
+    }
+
+    return '';
+  }
+
+  private function mergeLegacySystemStickerDescriptions($legacy_id, $target_id, $target_key) {
+    $defaults = $this->getSystemStickerDefaults($target_key);
+
+    if (!$defaults) {
+      return;
+    }
+
+    $legacy_descriptions = $this->db->query("
+      SELECT psd.language_id, psd.name, l.code
+      FROM `" . DB_PREFIX . "product_sticker_description` psd
+      LEFT JOIN `" . DB_PREFIX . "language` l
+        ON l.language_id = psd.language_id
+      WHERE psd.product_sticker_id = '" . (int)$legacy_id . "'
+    ");
+
+    foreach ($legacy_descriptions->rows as $legacy_description) {
+      $language_id = (int)$legacy_description['language_id'];
+      $legacy_name = trim($legacy_description['name']);
+
+      if ($legacy_name === '') {
+        continue;
+      }
+
+      $target_description = $this->db->query("
+        SELECT name
+        FROM `" . DB_PREFIX . "product_sticker_description`
+        WHERE product_sticker_id = '" . (int)$target_id . "'
+          AND language_id = '" . $language_id . "'
+        LIMIT 1
+      ");
+
+      $code = isset($legacy_description['code']) ? strtolower($legacy_description['code']) : '';
+      $default_name = (strpos($code, 'bg') === 0) ? $defaults['bg'] : $defaults['en'];
+
+      if (!$target_description->num_rows || trim($target_description->row['name']) === $default_name) {
+        $this->db->query("
+          INSERT INTO `" . DB_PREFIX . "product_sticker_description`
+          SET product_sticker_id = '" . (int)$target_id . "',
+              language_id = '" . $language_id . "',
+              name = '" . $this->db->escape($legacy_name) . "'
+          ON DUPLICATE KEY UPDATE name = VALUES(name)
+        ");
+      }
+    }
+  }
+
+  private function getSystemStickerDefaults($system_key) {
+    $definitions = array(
+      'new' => array(
+        'color' => '#198754',
+        'text_color' => '#ffffff',
+        'bg' => 'Нов',
+        'en' => 'New'
+      ),
+      'sale' => array(
+        'color' => '#dc3545',
+        'text_color' => '#ffffff',
+        'bg' => 'Промоция',
+        'en' => 'Sale'
+      )
+    );
+
+    return isset($definitions[$system_key]) ? $definitions[$system_key] : array();
   }
 
   private function addLanguageData(&$data) {

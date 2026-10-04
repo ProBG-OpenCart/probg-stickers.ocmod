@@ -5,13 +5,15 @@ All notable changes to ProBG Product Stickers are documented in this file.
 ## [2.2.0] - Unreleased
 
 ### Added
-- multilingual renaming of the protected automated **New** and **Sale** stickers from module settings.
+- multilingual renaming of the protected automated **New** and **Sale** stickers from module settings;
+- configurable background and text colors for the automated **New** and **Sale** stickers.
 
 ### Changed
 - automated sticker names are validated per configured store language and stored in `product_sticker_description` without weakening system-record delete/edit protection; missing language rows receive defaults without overwriting renamed values.
 
 ### Fixed
 - loading sticker language strings inside Catalog → Products and Catalog → Categories no longer overwrites the native page heading with "Product Stickers" / "Стикери за продукти".
+- legacy automated sticker records are normalized into the canonical `new` and `sale` records, preventing duplicate system stickers after upgrade while preserving existing names/colors when the canonical values are still defaults.
 
 ## [2.1.0] - 2026-10-02
 
