@@ -1,0 +1,60 @@
+name: Build v2.2.1 hotfix test package
+
+on:
+  push:
+    branches:
+      - test/v2.2.1-module-product-id
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      PACKAGE_NAME: probg-stickers-2.2.1-test.ocmod.zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/probg-stickers-test
+          zip -r "/tmp/probg-stickers-test/${PACKAGE_NAME}" install.xml upload             -x '*.DS_Store' -x '__MACOSX/*'
+
+      - name: Validate package
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -t "/tmp/probg-stickers-test/${PACKAGE_NAME}"
+
+          python3 - <<'PY'
+          import zipfile
+
+          package = "/tmp/probg-stickers-test/probg-stickers-2.2.1-test.ocmod.zip"
+
+          with zipfile.ZipFile(package) as archive:
+              names = archive.namelist()
+
+          assert "install.xml" in names
+          assert any(name.startswith("upload/") for name in names)
+          assert not any(name.startswith("dist/") for name in names)
+          assert not any(name.startswith("probg-stickers") and "/" in name for name in names)
+
+          print(f"Validated {len(names)} archive entries")
+          PY
+
+          cd /tmp/probg-stickers-test
+          sha256sum "${PACKAGE_NAME}" > "${PACKAGE_NAME}.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: probg-stickers-2.2.1-test
+          path: /tmp/probg-stickers-test/
+          if-no-files-found: error
+          retention-days: 7
