@@ -6,7 +6,7 @@ Bulgarian documentation: [README_BG.md](README_BG.md)
 
 ## Version
 
-Current version: **2.2.0**
+Current development version: **2.2.1**
 
 ## Features
 
