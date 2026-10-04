@@ -117,7 +117,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $settings['module_product_sticker_position'] = $position;
       $settings['module_product_sticker_new_days'] = $new_days;
       $settings['module_product_sticker_sale_show_discount'] = $show_discount;
-      $settings['module_product_sticker_version'] = '2.1.0';
+      $settings['module_product_sticker_version'] = '2.2.0';
 
       $this->model_setting_setting->editSetting('module_product_sticker', $settings);
 
@@ -198,7 +198,7 @@ class ControllerExtensionModuleProductSticker extends Controller {
       $settings['module_product_sticker_position'] = $position;
       $settings['module_product_sticker_new_days'] = $new_days;
       $settings['module_product_sticker_sale_show_discount'] = $show_discount;
-      $settings['module_product_sticker_version'] = '2.1.0';
+      $settings['module_product_sticker_version'] = '2.2.0';
 
       $this->model_setting_setting->editSetting('module_product_sticker', $settings);
 
