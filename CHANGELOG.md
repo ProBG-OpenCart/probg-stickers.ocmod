@@ -12,6 +12,7 @@ All notable changes to ProBG Product Stickers are documented in this file.
 
 ### Fixed
 - loading sticker language strings inside Catalog → Products and Catalog → Categories no longer overwrites the native page heading with "Product Stickers" / "Стикери за продукти".
+- legacy automated sticker records are normalized into the canonical `new` and `sale` records, preventing duplicate system stickers after upgrade while preserving existing names/colors when the canonical values are still defaults.
 
 ## [2.1.0] - 2026-10-02
 
