@@ -10,6 +10,9 @@ All notable changes to ProBG Product Stickers are documented in this file.
 ### Changed
 - automated sticker names are validated per configured store language and stored in `product_sticker_description` without weakening system-record delete/edit protection; missing language rows receive defaults without overwriting renamed values.
 
+### Fixed
+- loading sticker language strings inside Catalog → Products and Catalog → Categories no longer overwrites the native page heading with "Product Stickers" / "Стикери за продукти".
+
 ## [2.1.0] - 2026-10-02
 
 ### Added
